@@ -1,0 +1,3446 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<style>
+/* styles/brand.css */
+/*
+ * Bloqade brand theming — the SINGLE design system for the whole site.
+ *
+ * There is one canonical token layer (defined once at `:root` for dark and
+ * `:root[data-theme='light']` for light). BOTH consumers read from it:
+ *   1. The bespoke landing/blog pages (`.site-body`, via SiteLayout) — their
+ *      `--page-*` names are now thin ALIASES onto the shared tokens, so there
+ *      are no duplicated colour literals.
+ *   2. Starlight docs pages — the full `--sl-*` design-variable set is mapped
+ *      onto the same shared tokens, so Starlight no longer looks like "default
+ *      Starlight tinted purple" but adopts the landing's exact palette, Lato
+ *      typography, weight-900 headings and brand hairlines.
+ *
+ * The theme mechanism (both chromes) is `data-theme` on <html> +
+ * localStorage['starlight-theme']; the shared header toggle (SiteHeader.astro)
+ * writes that same key so docs + landing stay in sync.
+ *
+ * Fonts (Lato) are loaded via @fontsource in astro.config `customCss` (400/700)
+ * and SiteLayout (900); the 900 weight is also pulled in here so weight-900
+ * headings render on Starlight docs pages too. KaTeX CSS is loaded globally via
+ * `katex/dist/katex.min.css` in `customCss`.
+ *//* lato-latin-ext-900-normal */
+/* lato-latin-900-normal */
+/* ==========================================================================
+ * 1. Canonical design tokens (source of truth = the landing brand system)
+ *
+ * `:root` is the DARK theme; `:root[data-theme='light']` overrides for LIGHT.
+ * `data-theme` is always present on <html> (set pre-paint by Starlight's
+ * ThemeProvider and by SiteLayout's inline script), so the bare `:root` values
+ * apply for dark and the `[data-theme='light']` values for light.
+ * ========================================================================== */
+:root {
+  /* DARK */
+  --color-bg: #0c0d14;
+  --color-fg: #f2f2f8;
+  --color-muted: #a6a9bd;
+  --color-border: #262838;
+  --color-surface: #14151f;
+  --color-surface-hover: #1d1e2c;
+  --brand: #9d80ff;
+  --brand-strong: #b6a1ff;
+  --brand-soft: #1c1740;
+  --on-brand: #ffffff;
+}
+
+:root[data-theme='light'] {
+  --color-bg: #ffffff;
+  --color-fg: #1a1b22;
+  --color-muted: #55596b;
+  --color-border: #e6e6ef;
+  --color-surface: #f7f7fb;
+  --color-surface-hover: #f0eefb;
+  --brand: #6437ff;
+  --brand-strong: #4f27d6;
+  --brand-soft: #efeaff;
+  --on-brand: #ffffff;
+}
+
+/* --- 1a. Data-visualisation series palette --------------------------------
+ * The categorical palette every chart on the site draws from, in FIXED slot
+ * order (never cycled): slot 1 is brand violet — it always carries "ours" —
+ * then orange, aqua, yellow, magenta. Both columns are separately stepped for
+ * their own surface (`--color-surface`) rather than being an automatic flip of
+ * each other, and the set is validated per mode for the CVD/lightness/chroma
+ * gates on the adjacent pairlist (lines, bars, stacks). Slots 2–4 sit below 3:1
+ * against the light surface, so any chart using them owes the reader visible
+ * labels or a table view. Charts also carry a per-series marker SHAPE, so
+ * identity never rests on hue alone. */
+:root {
+  /* DARK steps (surface #14151f) */
+  --viz-series-1: #9085e9;
+  --viz-series-2: #d95926;
+  --viz-series-3: #199e70;
+  --viz-series-4: #c98500;
+  --viz-series-5: #e2679b;
+}
+:root[data-theme='light'] {
+  /* LIGHT steps (surface #f7f7fb) */
+  --viz-series-1: #6437ff;
+  --viz-series-2: #eb6834;
+  --viz-series-3: #1baf7a;
+  --viz-series-4: #eda100;
+  --viz-series-5: #d81b7a;
+}
+
+/* ==========================================================================
+ * 2. Starlight design-variable mapping
+ *
+ * Every `--sl-*` colour/layout/type variable Starlight derives its chrome from
+ * is mapped onto the canonical tokens above. Values expressed with `var(--…)`
+ * are defined ONCE here (dark) and re-resolve automatically for light because
+ * the underlying token flips; only the intermediate neutral ramp and the couple
+ * of variables whose *semantics* differ per theme are re-declared in the light
+ * block below.
+ *
+ * `--sl-color-white` / `--sl-color-black` are Starlight's "max-contrast fg" /
+ * "page bg" (they invert between themes), so they map to fg / bg respectively.
+ * ========================================================================== */
+:root {
+  /* Neutral ramp (dark: gray-1 lightest → gray-6 darkest). */
+  --sl-color-white: var(--color-fg);
+  --sl-color-gray-1: #e3e4ee;
+  --sl-color-gray-2: #c6c9d8;
+  --sl-color-gray-3: var(--color-muted);
+  --sl-color-gray-4: #6b6e84;
+  --sl-color-gray-5: #363a4d;
+  --sl-color-gray-6: var(--color-surface);
+  --sl-color-black: var(--color-bg);
+
+  /* Accent = brand. */
+  --sl-color-accent-low: var(--brand-soft);
+  --sl-color-accent: var(--brand);
+  --sl-color-accent-high: #c9bbff;
+
+  /* Semantic colours. */
+  --sl-color-text: var(--sl-color-gray-2);
+  --sl-color-text-accent: var(--brand-strong);
+  --sl-color-text-invert: var(--color-bg);
+  --sl-color-bg: var(--color-bg);
+  --sl-color-bg-nav: var(--color-surface);
+  --sl-color-bg-sidebar: var(--color-surface);
+  --sl-color-bg-inline-code: var(--color-surface-hover);
+  --sl-color-bg-accent: var(--brand);
+  --sl-color-hairline-light: var(--color-border);
+  --sl-color-hairline: var(--color-border);
+  --sl-color-hairline-shade: var(--color-border);
+
+  /* Typography — Lato body, matching mono, landing line-height. */
+  --sl-font:
+    'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  --sl-font-mono:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --sl-line-height: 1.6;
+
+  /* Layout — match the landing's column + a roomy nav bar. */
+  --sl-content-width: 48rem;
+  --sl-nav-height: 3.75rem;
+}
+
+:root[data-theme='light'] {
+  /* Neutral ramp (light: gray-1 darkest → gray-7 lightest). */
+  --sl-color-gray-1: #23252f;
+  --sl-color-gray-2: #33364a;
+  --sl-color-gray-4: #82859a;
+  --sl-color-gray-5: #c3c4d4;
+  --sl-color-gray-6: var(--color-border);
+  --sl-color-gray-7: var(--color-surface);
+
+  --sl-color-accent-high: #3a1d9e;
+
+  /* Semantics that differ per theme. */
+  --sl-color-text-invert: var(--on-brand);
+  --sl-color-bg-sidebar: var(--color-bg);
+}
+
+/* ==========================================================================
+ * 3. Shared logo + theme-toggle icon swaps (used by BOTH chromes)
+ *
+ * Global (not scoped to `.site-body`) so the docs header/footer swap the
+ * light/dark brand logo and the sun/moon glyph exactly like the landing.
+ * ========================================================================== */
+/* The `:root:not(…)` prefix is load-bearing, not decoration: §4's
+ * `.site-logo { display: block }` is declared LATER at equal specificity, so a
+ * bare `.site-logo-dark` hide rule LOSES on source order and both wordmarks
+ * paint at once — doubling `.site-brand`'s measured width in the header and
+ * ghosting a second wordmark under the footer one. Keep §3 above §4 (the swap
+ * belongs with the token layer) and win on specificity instead. Note the
+ * accepted consequence: this also removes the ghosted duplicate wordmark from
+ * the footer, so the 1440 page height drops by ~36px — a deliberate, accepted
+ * deviation from the frozen desktop baseline.
+ *
+ * Only the two HIDE rules live here. The shown logo deliberately falls through
+ * to §4's `.site-logo { display: block }` in BOTH themes, so light and dark
+ * render identically; an old `[data-theme='dark'] … { display: inline-block }`
+ * rule survived the specificity fight above and made dark the odd one out. */
+:root:not([data-theme='dark']) .site-logo-dark {
+  display: none;
+}
+:root[data-theme='dark'] .site-logo-light {
+  display: none;
+}
+
+.theme-toggle__moon {
+  display: none;
+}
+:root[data-theme='dark'] .theme-toggle__sun {
+  display: none;
+}
+:root[data-theme='dark'] .theme-toggle__moon {
+  display: inline;
+}
+
+/* ==========================================================================
+ * 4. Shared header chrome (SiteHeader.astro — landing + docs)
+ *
+ * `.site-header__inner`, `.site-brand`, `.site-nav`, `.theme-toggle` are the
+ * shared markup. `.site-header` is the landing's own sticky wrapper; on docs
+ * the identical inner sits inside Starlight's fixed `.header` (themed below).
+ * ========================================================================== */
+
+/* Keep the classic-scrollbar lane reserved whether or not the page overflows.
+ * Without this, a vertical bar appearing (or overlay vs always-on) shrinks
+ * the layout viewport by ~12–15px and the sticky brand/nav bars reflow —
+ * wrapping, recentering, or looking scaled — relative to a short page. */
+html {
+  scrollbar-gutter: stable;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  width: 100%;
+  max-width: 100%;
+  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  height: 100%;
+}
+
+/* Landing/blog: centered max-width column with its own padding. */
+.site-header .site-header__inner {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+}
+
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  /* Push the nav + actions to the right in both chromes. */
+  margin-right: auto;
+}
+.site-logo {
+  display: block;
+  width: auto;
+  /* Matches the 36px QuEra lockup in the brand bar above. */
+  height: 36px;
+}
+
+.site-header__search {
+  flex: 0 1 18rem;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+.site-nav a {
+  color: var(--color-fg);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.site-nav a:hover {
+  color: var(--brand-strong);
+}
+.site-nav__icon {
+  display: inline-flex;
+  color: var(--color-muted);
+}
+.site-nav__icon:hover {
+  color: var(--brand-strong);
+}
+
+/* Mobile nav disclosure (SiteHeader.astro). Hidden at every width by default —
+ * it is revealed ONLY inside the max-width query below, and only once the
+ * script has marked its header `data-nav="collapsible"`, so the desktop bar and
+ * the JS-off fallback are both untouched. Shares the `.theme-toggle` shape. */
+.site-nav__toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-fg);
+  cursor: pointer;
+}
+.site-nav__toggle:hover {
+  border-color: var(--brand);
+  color: var(--brand-strong);
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-fg);
+  cursor: pointer;
+}
+.theme-toggle:hover {
+  border-color: var(--brand);
+  color: var(--brand-strong);
+}
+
+/* --- Docs-only header wrapper (Starlight PageFrame's fixed `.header`) ------ */
+.header {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  background-color: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-border);
+}
+/* The docs inner fills the already-padded wrapper edge-to-edge. */
+.header .site-header__inner {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Guides shell — a second, route-level navigation row below the shared site
+ * header, following the same persistent-tab structure as the Cirq docs. It is
+ * present on guide hubs and their child pages; API/reference routes retain
+ * Starlight's original header geometry. */
+:root {
+  --guides-tabs-height: 3.5rem;
+}
+
+.header:has(.guides-tabs) {
+  height: calc(var(--sl-nav-height) + var(--guides-tabs-height));
+  padding: 0;
+}
+
+.docs-header--guides {
+  display: grid;
+  height: 100%;
+  grid-template-rows: var(--sl-nav-height) var(--guides-tabs-height);
+}
+
+.docs-header--guides > .site-header__inner {
+  padding-inline: var(--sl-nav-pad-x);
+}
+
+.guides-tabs {
+  display: flex;
+  min-width: 0;
+  align-items: stretch;
+  gap: clamp(0.25rem, 1vw, 0.8rem);
+  overflow-x: auto;
+  padding-inline: var(--sl-nav-pad-x);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+  box-shadow: 0 2px 5px rgb(17 8 48 / 7%);
+  scrollbar-width: none;
+}
+
+.guides-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.guides-tabs__link {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0 clamp(0.75rem, 1.7vw, 1.25rem);
+  color: var(--color-muted);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.guides-tabs__link:hover,
+.guides-tabs__link.is-active {
+  color: var(--color-fg);
+}
+
+.guides-tabs__link::after {
+  position: absolute;
+  right: 0.75rem;
+  bottom: -1px;
+  left: 0.75rem;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--brand);
+  content: '';
+  opacity: 0;
+  transform: scaleX(0.5);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.guides-tabs__link.is-active::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+/* Starlight normally offsets content by one nav row. Guide hubs have two. */
+html:has(.guides-tabs) {
+  scroll-padding-top: calc(1.5rem + var(--sl-nav-height) + var(--guides-tabs-height) + var(--sl-mobile-toc-height));
+}
+
+html:has(.guides-tabs) .main-frame {
+  padding-top: calc(
+    var(--sl-nav-height) + var(--guides-tabs-height) + var(--sl-mobile-toc-height)
+  );
+}
+
+/* PageFrame normally starts the sidebar below one header row. In the workflow
+ * shell it must clear both rows so its section title is never hidden beneath
+ * the horizontal navigation. */
+html:has(.guides-tabs) .sidebar-pane {
+  inset-block-start: calc(var(--sl-nav-height) + var(--guides-tabs-height));
+}
+
+/* Tutorial pages also have a table of contents. Clear the workflow row in
+ * both the desktop sticky rail and the mobile disclosure. */
+@media (min-width: 72rem) {
+  html:has(.guides-tabs) .right-sidebar {
+    padding-top: calc(var(--sl-nav-height) + var(--guides-tabs-height));
+  }
+}
+
+html:has(.guides-tabs) mobile-starlight-toc nav {
+  top: calc(var(--sl-nav-height) + var(--guides-tabs-height) - 1px);
+}
+
+html:has(.guides-tabs) mobile-starlight-toc .dropdown {
+  max-height: calc(85vh - var(--sl-nav-height) - var(--guides-tabs-height) - var(--sl-mobile-toc-height));
+}
+
+@media (max-width: 50rem) {
+  .guides-tabs {
+    gap: 0;
+    padding-inline: 0.5rem;
+  }
+
+  .guides-tabs__link {
+    min-height: 2.75rem;
+    padding-inline: 1rem;
+  }
+}
+
+@media (max-width: 50rem) {
+  /* On mobile the sidebar drawer (opened by Starlight's floating menu button)
+     carries Guides/API/Blog, so drop the docs header's text links to avoid
+     crowding; keep the GitHub icon, theme toggle and (icon-only) search. */
+  .header .site-nav a:not(.site-nav__icon) {
+    display: none;
+  }
+  .site-header__search {
+    flex: 0 0 auto;
+  }
+
+  /* --- Custom routes (landing + blog): a real mobile header ----------------
+   * `.site-header__inner` is a non-wrapping flex row, so below ~50rem the nav
+   * used to run straight off the right edge (the whole primary nav, the GitHub
+   * icon and the theme toggle were unreachable on a phone). Two layers:
+   *
+   *   1. `flex-wrap` — the NO-JS floor. The nav simply drops onto a second row
+   *      and every link stays visible and tappable.
+   *   2. `[data-nav='collapsible']` — set by SiteHeader's script, so it only
+   *      engages when the toggle can actually be operated. Then the nav becomes
+   *      a disclosure panel under the bar, driven purely off the button's
+   *      `aria-expanded` (no duplicate "is open" state to keep in sync).
+   *
+   * The docs chrome is untouched: it has no `.site-header` wrapper (Starlight's
+   * own `.header` + sidebar drawer own mobile nav there) and Header.astro does
+   * not render the toggle at all. */
+  .site-header .site-header__inner {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+  .site-header[data-nav='collapsible'] .site-nav__toggle {
+    display: inline-flex;
+  }
+  .site-header[data-nav='collapsible'] .site-nav {
+    display: none;
+    /* Absolute (not wrapped in flow) so opening the menu overlays the page
+     * instead of shoving the whole document down; `.site-header` is sticky,
+     * hence already the containing block. */
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0.25rem 1.5rem 0.75rem;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .site-header[data-nav='collapsible']
+    .site-nav__toggle[aria-expanded='true']
+    + .site-nav {
+    display: flex;
+  }
+
+  /* --- 44px touch targets for the header controls (both chromes) -----------
+   * Text links were 24px tall, the GitHub glyph 20x20 and the theme toggle
+   * 32x32. Growing the boxes changes no type and no label. */
+  .site-brand {
+    /* Shrink-to-fit around a 36px image, i.e. a 36px-tall target; the logo
+     * stays 36px and simply centres in the taller hit box. */
+    min-height: 2.75rem;
+  }
+  .site-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+  .site-nav__icon {
+    /* Explicit box, so the icon does not stretch inside the stacked panel. */
+    width: 2.75rem;
+    height: 2.75rem;
+    justify-content: center;
+  }
+  .theme-toggle {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  /* Footer link row: 23px-tall targets, some only 23px wide ("API"). Pad the
+   * links out past 44x44 and tighten the gap so the row does not sprawl; the
+   * negative inline start margin keeps the first label flush with the brand
+   * text above it. */
+  .site-footer__links {
+    gap: 0.25rem;
+    margin-inline-start: -0.75rem;
+  }
+  .site-footer__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.7rem 0.75rem;
+  }
+}
+
+/* ==========================================================================
+ * 4a. Parent-brand bar (BrandBar.astro)
+ *
+ * Rendered by SiteLayout.astro above `.site-header`. Fixed indigo regardless of
+ * the light/dark toggle — it is QuEra's band, not the site's surface.
+ * ========================================================================== */
+.brand-bar {
+  width: 100%;
+  max-width: 100%;
+  background: #110830;
+  color: #fff;
+}
+.brand-bar__inner {
+  display: flex;
+  align-items: center;
+  /* Right-aligned so the QuEra lockup does not stack directly above the Bloqade
+   * lockup in .site-header. */
+  justify-content: flex-end;
+  gap: 1.1rem;
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0.9rem 1.5rem;
+}
+.brand-bar__logo {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+.brand-bar__logo img {
+  display: block;
+  width: auto;
+  height: 36px;
+}
+.brand-bar__rule {
+  flex: none;
+  width: 1px;
+  height: 26px;
+  background: rgb(255 255 255 / 24%);
+}
+.brand-bar__tagline {
+  margin: 0;
+  font-family: 'DM Sans Variable', system-ui, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: rgb(255 255 255 / 78%);
+}
+@media (max-width: 50rem) {
+  /* The lockup is a 36px image in a shrink-to-fit link, i.e. a 36px-tall touch
+   * target. Grow only the hit box — the image keeps its 36px height, centred. */
+  .brand-bar__logo {
+    min-height: 2.75rem;
+  }
+}
+
+@media (max-width: 30rem) {
+  .brand-bar__rule {
+    display: none;
+  }
+  .brand-bar__inner {
+    gap: 0.7rem;
+  }
+  .brand-bar__tagline {
+    font-size: 0.875rem;
+  }
+}
+
+/* ==========================================================================
+ * 5. Docs content typography (Starlight `.sl-markdown-content` + page title)
+ *
+ * Bring the docs body in line with the landing `.prose`: Lato (inherited),
+ * weight-900 headings, brand-strong links, landing-style inline code.
+ * ========================================================================== */
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6),
+.content-panel h1 {
+  font-weight: 900;
+}
+.sl-markdown-content a {
+  color: var(--brand-strong);
+}
+.sl-markdown-content :not(pre) > code {
+  color: var(--brand-strong);
+  background-color: var(--color-surface-hover);
+}
+
+/* ==========================================================================
+ * 6. Mermaid diagrams (docs pages)
+ *
+ * ```mermaid fences are rendered client-side (see src/components/MermaidHead.astro,
+ * wired via `components.Head` in astro.config.mjs). Expressive Code first turns
+ * the fence into a <pre data-language="mermaid"> code block; we hide that raw
+ * block until the script replaces it with a .mermaid-diagram <svg>. On a render
+ * error the script reveals the original block again (inline display:block).
+ * ========================================================================== */
+.expressive-code:has(pre[data-language='mermaid']) {
+  display: none;
+}
+
+.mermaid-diagram {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+}
+
+.mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ==========================================================================
+ * 7. Custom (non-Starlight) pages: landing + blog
+ *
+ * These routes render with src/layouts/SiteLayout.astro (<body class="site-body">)
+ * instead of the Starlight layout. Everything below is scoped under `.site-body`
+ * so it CANNOT leak into Starlight pages — Starlight styles live in CSS
+ * `@layer`s, and unlayered rules would otherwise win the cascade over them.
+ *
+ * The `--page-*` names are thin aliases onto the shared tokens (§1), so these
+ * rules carry NO colour literals of their own.
+ * ========================================================================== */
+.site-body {
+  --page-bg: var(--color-bg);
+  --page-fg: var(--color-fg);
+  --page-muted: var(--color-muted);
+  --page-border: var(--color-border);
+  --page-surface: var(--color-surface);
+  --page-surface-hover: var(--color-surface-hover);
+
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--page-bg);
+  color: var(--page-fg);
+  font-family: var(--sl-font);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.site-body *,
+.site-body *::before,
+.site-body *::after {
+  box-sizing: border-box;
+}
+
+.site-body a {
+  color: var(--brand-strong);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--brand);
+  color: var(--on-brand);
+  padding: 0.6rem 1rem;
+  border-radius: 0 0 8px 0;
+  z-index: 100;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+/* --- Main column ---------------------------------------------------------- */
+.site-main {
+  flex: 1;
+  width: 100%;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+.site-main--wide {
+  max-width: 72rem;
+}
+
+/* --- Landing page ---------------------------------------------------------
+ * The bespoke home route ('home') has its own re-skin — a fixed light palette
+ * aligned to quera.com (Outfit/DM Sans + purple accent) — scoped entirely to
+ * `.landing` in ./landing.css (loaded only for that route). Nothing for it
+ * lives here so the shared docs/blog tokens stay untouched. */
+
+/* --- Blog listing --------------------------------------------------------- */
+.page-head {
+  margin-bottom: 2.5rem;
+}
+.page-head h1 {
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 900;
+  margin: 0 0 0.5rem;
+}
+.page-head p {
+  color: var(--page-muted);
+  margin: 0;
+}
+.post-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+/* Shape (border/radius/surface + hover) shared via §8; blog-specific padding only. */
+.post-list__link {
+  display: block;
+  padding: 1.5rem;
+  color: var(--page-fg);
+}
+.post-list__date {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--brand-strong);
+}
+.post-list__title {
+  font-size: 1.4rem;
+  font-weight: 900;
+  margin: 0.35rem 0 0.5rem;
+}
+.post-list__excerpt {
+  margin: 0 0 0.75rem;
+  color: var(--page-muted);
+}
+.post-list__authors {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--page-muted);
+}
+/* Shown instead of the list when every post is a draft or unlisted. */
+.post-list__empty {
+  margin: 0;
+  color: var(--page-muted);
+}
+
+/* --- Blog post ------------------------------------------------------------ */
+.post__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 48rem) minmax(11rem, 1fr);
+  align-items: start;
+  gap: clamp(2rem, 5vw, 4rem);
+}
+.post__header {
+  max-width: 48rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--page-border);
+  padding-bottom: 1.5rem;
+}
+.post__back {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: var(--brand-strong);
+}
+.post__title {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 900;
+  line-height: 1.15;
+  margin: 0 0 0.75rem;
+}
+.post__meta {
+  margin: 0;
+  color: var(--page-muted);
+  font-size: 0.95rem;
+}
+/* "Unlisted draft" notice — an unlisted post is otherwise indistinguishable
+ * from a published one, and a reviewer holding the link should be able to tell
+ * at a glance. Loud enough to read as chrome rather than as part of the post. */
+.post__unlisted {
+  margin: 1.25rem 0 0;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--brand);
+  border-radius: 8px;
+  background: var(--brand-soft);
+  color: var(--page-fg);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.post__unlisted strong {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+}
+.post__body {
+  min-width: 0;
+}
+/* The right-hand rail (table of contents + share links). Sticky lives here so
+ * the whole rail travels with the reader as one block. */
+.post__rail {
+  position: sticky;
+  top: 5rem;
+  display: grid;
+  gap: 2rem;
+}
+.post-toc {
+  border-left: 1px solid var(--page-border);
+  padding-left: 1rem;
+}
+.post-toc__title {
+  margin: 0 0 0.65rem;
+  color: var(--page-fg);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.post-toc__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.post-toc__item {
+  margin: 0;
+  position: relative;
+}
+.post-toc__item--nested {
+  padding-left: 0.75rem;
+}
+/* Scroll-spy (BlogTableOfContents.astro): the section under the reading line.
+ * Colour only — no weight change, which would rewrap the rail as the reader
+ * scrolls. The marker overlays the rail's own hairline, so it reads as a lit
+ * segment of it and is unaffected by the nested items' indent. */
+.post-toc__item--active > a {
+  color: var(--brand-strong);
+}
+.post-toc__item--active::before {
+  content: '';
+  position: absolute;
+  left: calc(-1rem - 1px);
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--brand);
+}
+.post-toc__item a {
+  display: block;
+  padding: 0.3rem 0;
+  color: var(--page-muted);
+  font-size: 0.84rem;
+  line-height: 1.35;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.post-toc__item a:hover,
+.post-toc__item a:focus-visible {
+  color: var(--brand-strong);
+}
+
+.post-share {
+  border-left: 1px solid var(--page-border);
+  padding-left: 1rem;
+}
+.post-share__title {
+  margin: 0 0 0.65rem;
+  color: var(--page-fg);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.post-share__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.post-share__link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  color: var(--page-muted);
+  font-size: 0.84rem;
+  line-height: 1.35;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.post-share__link:hover,
+.post-share__link:focus-visible {
+  color: var(--brand-strong);
+}
+.post-share__link svg {
+  flex: none;
+}
+
+@media (max-width: 64rem) {
+  .post__layout {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  /* Unwrap the rail so its two halves can straddle the article: the contents
+   * box vanishes and the TOC/share become flex items of `.post__layout`. */
+  .post__rail {
+    display: contents;
+  }
+  .post-toc {
+    position: static;
+    order: -1;
+    width: 100%;
+    margin-bottom: 2rem;
+  }
+  /* Reading first, sharing after — the share links follow the post body. */
+  .post-share {
+    order: 1;
+    width: 100%;
+    margin-top: 2rem;
+  }
+  /* Same rescue as `.post-toc` above, and for the same reason: the base rule's
+   * `align-items: start` survives the switch to a flex column, so each child is
+   * sized to its FIT-CONTENT width. Without this the body inherits the width of
+   * its widest min-content child (a code frame) and runs off the viewport. */
+  .post__body {
+    width: 100%;
+  }
+  /* A dotted module path in inline code is otherwise one unbreakable ~350px
+   * run, which sets the column's min-content width all by itself. */
+  .prose :not(pre) > code {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* --- Prose (rendered markdown) -------------------------------------------- */
+.prose {
+  font-size: 1.05rem;
+}
+.prose > :first-child {
+  margin-top: 0;
+}
+/* Clear the sticky header, so a heading jumped to from the table of contents
+ * lands below it. Must stay UNDER the scroll-spy's 96px reading line, or the
+ * jump would land the heading short of the line and highlight the section
+ * above it. Matches the reference list's offset. */
+.prose h2,
+.prose h3 {
+  scroll-margin-top: 5rem;
+}
+.prose h2 {
+  font-size: 1.6rem;
+  font-weight: 900;
+  margin: 2.25rem 0 0.75rem;
+  line-height: 1.25;
+}
+.prose h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 1.75rem 0 0.5rem;
+}
+.prose p,
+.prose ul,
+.prose ol {
+  margin: 0 0 1.15rem;
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.4rem;
+}
+.prose li {
+  margin: 0.35rem 0;
+}
+.prose a {
+  color: var(--brand-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose .citation {
+  margin-left: 0.12em;
+  font-size: 0.7em;
+  font-weight: 700;
+  line-height: 0;
+  vertical-align: super;
+}
+.prose .citation a {
+  text-decoration: none;
+}
+.prose .references {
+  padding-left: 1.5rem;
+  color: var(--page-muted);
+  font-size: 0.9rem;
+}
+.prose .references li {
+  scroll-margin-top: 5rem;
+  margin: 0.7rem 0;
+  padding-left: 0.35rem;
+}
+.prose .references li:target {
+  border-radius: 6px;
+  background: var(--brand-soft);
+}
+.prose .reference-backlink {
+  margin-left: 0.2em;
+  text-decoration: none;
+}
+.prose img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1.5rem auto;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 0.75rem;
+  border: 1px solid var(--page-border);
+}
+.prose iframe {
+  display: block;
+  width: 100%;
+  min-height: min(75vh, 48rem);
+  margin: 1.5rem 0;
+  border: 1px solid var(--page-border);
+  border-radius: 10px;
+  background: var(--page-surface);
+}
+.prose :not(pre) > code {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  border-radius: 6px;
+  background: var(--page-surface-hover);
+  color: var(--brand-strong);
+}
+.prose blockquote {
+  margin: 1.5rem 0;
+  padding: 0.5rem 1.25rem;
+  border-left: 3px solid var(--brand);
+  color: var(--page-muted);
+}
+
+/* --- Footer (shared: SiteFooter.astro — landing + docs) ------------------- */
+.site-footer {
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  margin-top: auto;
+}
+/* On docs the brand footer follows Starlight's pager inside the content column. */
+.site-footer--docs {
+  margin-top: 3rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+}
+.site-footer__inner {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.75rem 1.5rem;
+  text-align: center;
+}
+.site-footer__tagline {
+  margin: 0;
+  color: var(--color-fg);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+.site-footer__legal {
+  margin: 0.45rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+}
+
+/* --- Responsive ----------------------------------------------------------- */
+@media (max-width: 50rem) {
+  /* Reading-chrome touch targets. Both are sized purely by their text today
+   * (23px and 28px tall); `min-height` + centring grows the hit box without
+   * touching the label or the type scale. */
+  .post__back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+  .post-toc__item a,
+  .post-share__link {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+
+  /* Citation markers (rehype-references.mjs) are bare inline <a> around one or
+   * two digits — a 7x15px hit box on a phone. Grow the BOX without moving a
+   * glyph: the anchors stay inline, so block padding inflates the border box
+   * but not the line box, and the inline padding is cancelled exactly by an
+   * equal negative margin, so the text advance is byte-identical (no rewrap).
+   * ~25x25 clears the audit's 24px error floor. Adjacent markers inside a
+   * merged range ("1–4") sit ~6px apart, so their grown boxes necessarily
+   * overlap — an accepted trade of ~12 overlap warns for 30 errors. */
+  .prose .citation a {
+    padding: 0.45em 0.75em;
+    margin-inline: -0.75em;
+  }
+}
+
+@media (max-width: 34rem) {
+  .site-nav {
+    gap: 0.85rem;
+  }
+  .install {
+    width: 100%;
+  }
+  .install__cmd {
+    flex: 1;
+  }
+  .btn {
+    flex: 1;
+  }
+}
+
+/* Phone-only shell. The 1.5rem page gutter and the 1.5rem card padding stack
+ * up to 96px — 27% of a 360px viewport — before a word is drawn, so titles wrap
+ * to four lines. Trim both; nothing is removed, the column just gets wider. */
+@media (max-width: 30rem) {
+  .site-main {
+    padding: 2.5rem 1rem 4rem;
+  }
+  .post-list__link {
+    padding: 1.25rem;
+  }
+  /* Full-bleed figures. The blog's images are 1700–2800px-wide screenshots with
+   * baked-in axis ticks and legends, so at this width every pixel spent on a
+   * gutter, a 0.75rem frame and a hairline is a pixel of illegible label. Pull
+   * them back out to the (trimmed, 1rem) page gutter — roughly +25% linear.
+   * Reference-list images, if any, keep the framed treatment. */
+  .prose img:not(:where(.references *)) {
+    width: calc(100% + 2rem);
+    max-width: none;
+    margin-inline: -1rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+}
+
+/* ==========================================================================
+ * 8. Shared visual widgets — ONE language across landing + Starlight docs
+ *
+ * Everything below is UNLAYERED. Starlight ships all of its widget CSS inside
+ * `@layer starlight.components` and Expressive Code ships inside the same
+ * layer, so these unlayered rules win the cascade over Starlight's defaults
+ * WITHOUT `!important` and regardless of source order (layer precedence beats
+ * specificity). All values come from the canonical §1 tokens, so light + dark
+ * both flip automatically and there are no colour literals here.
+ * ========================================================================== */
+
+/* --- 8.0 ONE card shape --------------------------------------------------
+ * The landing feature cards, the blog list, Starlight `<LinkCard>` and
+ * `<Card>` are the SAME component: 1px hairline, 14px radius, surface bg, and
+ * a translateY lift to a brand border + soft brand shadow on hover. This is
+ * the single source of truth; the per-widget rules below only add the inner
+ * layout/typography each markup needs. */
+.post-list__link,
+.api-card,
+.sl-link-card,
+.sl-markdown-content .card {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  text-decoration: none;
+  transition:
+    transform 0.12s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.post-list__link:hover,
+.api-card--link:hover,
+.sl-link-card:hover,
+.sl-markdown-content .card:hover {
+  transform: translateY(-3px);
+  border-color: var(--brand);
+  /* Keep the surface on hover (overrides Starlight's grey hover fill). */
+  background: var(--color-surface);
+  box-shadow: 0 12px 28px -18px color-mix(in srgb, var(--brand) 60%, transparent);
+}
+
+/* --- 8.0 ONE button shape ------------------------------------------------
+ * The landing `.btn` and Starlight `<LinkButton>` (`.sl-link-button`) share a
+ * single shape: 10px radius, weight 700, primary = brand fill / on-brand text,
+ * ghost/secondary = transparent + hairline that turns brand on hover. */
+.btn,
+.sl-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 0.7rem 1.4rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.98rem;
+  line-height: 1.2;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition:
+    transform 0.08s ease,
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.btn:active,
+.sl-link-button:active {
+  transform: translateY(1px);
+}
+.btn--primary,
+.sl-link-button.primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+.btn--primary:hover,
+.sl-link-button.primary:hover {
+  background: var(--brand-strong);
+  border-color: var(--brand-strong);
+  color: var(--on-brand);
+}
+.btn--ghost,
+.sl-link-button.secondary {
+  background: transparent;
+  color: var(--color-fg);
+  border-color: var(--color-border);
+}
+.btn--ghost:hover,
+.sl-link-button.secondary:hover {
+  border-color: var(--brand);
+  color: var(--brand-strong);
+}
+/* Minimal LinkButton = a bare brand text link. */
+.sl-link-button.minimal {
+  padding-inline: 0;
+  color: var(--brand-strong);
+}
+
+/* --- 8.4 API hub cards ----------------------------------------------------
+ * The component + SDK-release cards on the /api overview and /sdk/<meta>
+ * pages. Reuses §8.0's card shape + §8.0's `.btn` shape; adds only the grid
+ * and the inner head/badge/desc/actions layout. Theme-aware via the base
+ * tokens, so it works both inside Starlight content (wrap in `.not-content`)
+ * and in the bespoke SiteLayout pages. */
+.api-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0 0;
+}
+.api-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1.35rem;
+  color: inherit;
+}
+.api-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.api-card__name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0;
+}
+.api-card__badge {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  white-space: nowrap;
+}
+.api-card__desc {
+  flex: 1 1 auto;
+  margin: 0.55rem 0 1rem;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+.api-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.api-card__actions .btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+.api-card__meta {
+  margin: 0.9rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+.api-card__meta a {
+  color: var(--brand-strong);
+  font-weight: 600;
+}
+/* Section wrapper on the overview (heading + lede above each grid). */
+.api-section + .api-section {
+  margin-top: 2.75rem;
+}
+.api-section__title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin: 0 0 0.3rem;
+}
+.api-section__lede {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+/* --- 8.1 Asides / callouts (`:::note`, `:::tip`, `:::caution`, `:::danger`)
+ * Reshaped from Starlight's square left-bar into the landing card language:
+ * rounded surface card, hairline tinted by the callout accent and a faint
+ * accent wash. note/tip = brand; caution = amber, danger = red (Starlight's
+ * existing semantic `--sl-color-*` palette — not new literals). Titles + links
+ * + in-aside code/table borders all follow the accent (both themes legible). */
+.starlight-aside {
+  --aside-accent: var(--brand);
+  --aside-title: var(--brand-strong);
+  /* Drive Starlight's in-aside code/table/hr borders off our accent too. */
+  --sl-color-asides-text-accent: var(--aside-title);
+  padding: 1rem 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--aside-accent) 35%, var(--color-border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--aside-accent) 7%, var(--color-surface));
+  color: var(--color-fg);
+}
+.starlight-aside--note,
+.starlight-aside--tip {
+  --aside-accent: var(--brand);
+  --aside-title: var(--brand-strong);
+}
+.starlight-aside--caution {
+  --aside-accent: var(--sl-color-orange);
+  --aside-title: var(--sl-color-orange-high);
+}
+.starlight-aside--danger {
+  --aside-accent: var(--sl-color-red);
+  --aside-title: var(--sl-color-red-high);
+}
+.starlight-aside__title {
+  color: var(--aside-title);
+}
+.starlight-aside__content a {
+  color: var(--aside-title);
+}
+
+/* --- 8.2 Cards: `<LinkCard>` + `<Card>` + `<CardGrid>` --------------------
+ * The card SHELL is styled in §8.0. Here: inner typography + a brand arrow /
+ * icon so a docs CardGrid reads as the landing feature grid, and neutralise
+ * Starlight's rainbow `<Card>` border/icon accents down to the brand system. */
+.sl-link-card .title {
+  color: var(--color-fg);
+  font-weight: 700;
+}
+.sl-link-card .description {
+  color: var(--color-muted);
+}
+.sl-link-card .icon {
+  color: var(--brand-strong); /* the → arrow accent */
+}
+.sl-link-card:hover .icon {
+  color: var(--brand-strong);
+}
+/* `<Card>` — override the nth-child rainbow accents to the single brand hue. */
+.sl-markdown-content .card {
+  --sl-card-border: var(--brand);
+  --sl-card-bg: var(--brand-soft);
+}
+.sl-markdown-content .card .title {
+  color: var(--color-fg);
+  font-weight: 700;
+}
+.sl-markdown-content .card .icon {
+  border-color: var(--brand);
+  background-color: var(--brand-soft);
+  color: var(--brand-strong);
+}
+/* Match the landing feature-grid gutter. */
+.sl-markdown-content .card-grid {
+  gap: 1.25rem;
+}
+
+/* --- 8.3 Tabs (`<Tabs>` / `<TabItem>`) ------------------------------------
+ * Minimal underline tabs (the landing's own idiom) with our hairline, a brand
+ * underline + brand-strong label on the active tab, brand hover on the rest. */
+/* NB: `starlight-tabs` is a custom ELEMENT (not a `.class`); the inner tab
+ * anchors sit inside `.sl-markdown-content`, so these rules must also out-rank
+ * the generic `.sl-markdown-content a { color: brand }` link rule (§5) to keep
+ * INACTIVE tabs muted. */
+starlight-tabs [role='tablist'] {
+  border-bottom: 1px solid var(--color-border);
+}
+starlight-tabs .tab > [role='tab'] {
+  --sl-tab-color-border: transparent;
+  color: var(--color-muted);
+  font-weight: 700;
+  border-radius: 8px 8px 0 0;
+}
+starlight-tabs .tab > [role='tab']:hover {
+  color: var(--brand-strong);
+  background: var(--color-surface);
+}
+starlight-tabs .tab > [role='tab'][aria-selected='true'] {
+  --sl-tab-color-border: var(--brand);
+  color: var(--brand-strong);
+}
+
+/* --- 8.4 Code blocks (Expressive Code) ------------------------------------
+ * EC frames already read their code background from our surface (via the
+ * gray-6/7 mapping in §2); the remaining defaults were the SQUARE corners,
+ * grey-5 hairlines and a non-brand copy button. Retheme those via EC's own
+ * `--ec-*` custom properties (one block, both themes flip through the tokens).
+ * Syntax token colours (per-span `--0/--1`) are untouched. The mermaid rule in
+ * §6 hides `pre[data-language='mermaid']` frames and is unaffected. */
+.expressive-code {
+  --ec-brdRad: 10px;
+  --ec-brdCol: var(--color-border);
+  --ec-codeBg: var(--color-surface);
+  --ec-frm-edTabBarBrdCol: var(--color-border);
+  --ec-frm-edTabBarBrdBtmCol: var(--color-border);
+  --ec-frm-trmTtbBrdBtmCol: var(--color-border);
+  --ec-gtrBrdCol: color-mix(in srgb, var(--color-border) 65%, transparent);
+  /* Copy button: muted glyph, brand tint + border on hover/focus. */
+  --ec-frm-inlBtnFg: var(--color-muted);
+  --ec-frm-inlBtnBg: var(--brand);
+  --ec-frm-inlBtnBrd: var(--brand);
+  --ec-focusBrd: var(--brand);
+}
+
+/* --- 8.5 Docs content chrome: badges, kbd, blockquote, tables -------------
+ * Bring the remaining Starlight markdown primitives onto the token hairlines /
+ * surfaces so nothing reads as "default Starlight". */
+.sl-badge {
+  border-radius: 6px;
+}
+.sl-markdown-content kbd:not(:where(.not-content *)),
+.prose kbd {
+  font-family: var(--sl-font-mono);
+  font-size: 0.85em;
+  padding: 0.15em 0.45em;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface-hover);
+  color: var(--color-fg);
+  box-shadow: 0 1px 0 var(--color-border);
+}
+/* Blockquote — match the landing `.prose blockquote` (3px brand rule, muted). */
+.sl-markdown-content blockquote:not(:where(.not-content *)) {
+  border-inline-start: 3px solid var(--brand);
+  color: var(--color-muted);
+}
+/* Tables — hairline borders + a legible header, from tokens. */
+.sl-markdown-content :is(th, td):not(:where(.not-content *)) {
+  border-bottom-color: var(--color-border);
+}
+.sl-markdown-content th:not(:where(.not-content *)) {
+  color: var(--color-fg);
+}
+
+/* --- 8.6 Pager (prev / next) ---------------------------------------------
+ * Restyle Starlight's pagination links as the same card/lift widget, so the
+ * bottom of every doc page belongs to the landing system too. */
+.pagination-links a {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: none;
+  color: var(--color-fg);
+  transition:
+    transform 0.12s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.pagination-links a:hover {
+  border-color: var(--brand);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -18px color-mix(in srgb, var(--brand) 60%, transparent);
+}
+.pagination-links a .link-title {
+  color: var(--brand-strong);
+}
+
+/* components/TsimBenchmarks.css */
+/*
+ * Tsim 1.0.0 release-post figures: TsimReleaseBenchmarks, TsimSimulatorComparison
+ * and TsimActiveWidthTable share this sheet, so their cards, toggles, rows and
+ * tooltips read as one set.
+ *
+ * Colour comes from the canonical `--viz-series-*` slots in brand.css, fixed
+ * per simulator (Tsim 1.0.0 = slot 1, Clifft = 2, SymFT = 3; Tsim 0.1.5 is the
+ * muted "before" ring). Everything else derives from the shared tokens, so
+ * light and dark flip automatically.
+ *
+ * Paragraph, list and link rules are scoped under `.tsb`: the blog wrapper's
+ * `.prose p` / `.prose ul` outrank a single class and would otherwise impose
+ * the prose rhythm on the figure chrome.
+ */
+.tsb {
+  --tsb-grid: color-mix(in srgb, var(--color-border) 80%, transparent);
+  --tsb-inset: 7px;
+
+  margin: 1.75rem 0 2rem;
+  padding: clamp(1rem, 3vw, 1.6rem);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  color: var(--color-fg);
+}
+
+/* Series slots: one place per slot, consumed by marks, legend and tooltip keys. */
+.tsb__s0 {
+  --tsb-color: var(--color-muted);
+}
+.tsb__s1 {
+  --tsb-color: var(--viz-series-1);
+}
+.tsb__s2 {
+  --tsb-color: var(--viz-series-2);
+}
+.tsb__s3 {
+  --tsb-color: var(--viz-series-3);
+}
+.tsb__s4 {
+  --tsb-color: var(--viz-series-4);
+}
+
+.tsb__sr {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- Caption -------------------------------------------------------------- */
+.tsb__caption {
+  margin-bottom: 0.9rem;
+}
+.tsb .tsb__eyebrow {
+  margin: 0 0 0.3rem;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tsb .tsb__title {
+  margin: 0 0 0.45rem;
+  font-size: clamp(1.15rem, 3vw, 1.4rem);
+  font-weight: 900;
+  line-height: 1.25;
+}
+.tsb .tsb__sub {
+  margin: 0;
+  max-width: 46rem;
+  color: var(--color-muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.tsb .tsb__sub + .tsb__sub {
+  margin-top: 0.45rem;
+}
+.tsb__sub strong {
+  color: var(--color-fg);
+}
+/* The caveat that has to travel with the plot, set a step quieter. */
+.tsb .tsb__sub--caveat {
+  margin-top: 0.6rem;
+  border-left: 2px solid var(--color-border);
+  padding-left: 0.6rem;
+  font-size: 0.78rem;
+}
+.tsb code {
+  font-size: 0.9em;
+}
+
+/* --- Legend --------------------------------------------------------------- */
+.tsb .tsb__legend {
+  display: flex;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.2rem;
+  list-style: none;
+}
+.tsb .tsb__legend-item {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  gap: 0.4rem;
+  color: var(--color-fg);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+/* Comparison legend: each entry shows or hides its simulator. */
+.tsb .tsb__legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.1rem 0.35rem;
+  margin: -0.1rem -0.35rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.tsb .tsb__legend-toggle:hover {
+  background: var(--color-surface-hover);
+}
+.tsb .tsb__legend-toggle[aria-pressed='false'] {
+  opacity: 0.45;
+}
+.tsb .tsb__legend-toggle[aria-pressed='false'] span {
+  text-decoration: line-through;
+}
+.tsb__glyph {
+  width: 0.8rem;
+  height: 0.8rem;
+  flex: none;
+  overflow: visible;
+}
+.tsb__glyph path,
+.tsb__mark path {
+  fill: var(--tsb-color);
+  stroke: var(--color-surface);
+  stroke-width: 1.5;
+}
+/* Tsim 0.1.5: hollow, so "before" never rests on the grey alone. */
+.tsb__ring path {
+  fill: var(--color-surface);
+  stroke: var(--tsb-color);
+  stroke-width: 2;
+}
+
+/* --- Segmented toggles ----------------------------------------------------- */
+.tsb__controls {
+  display: flex;
+  margin: 0 0 0.85rem;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.1rem;
+}
+.tsb__control {
+  display: grid;
+  gap: 0.3rem;
+  justify-items: start;
+}
+.tsb__control-label {
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tsb__segments {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-bg);
+}
+.tsb__segments button {
+  padding: 0.32rem 0.75rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+}
+.tsb__segments button:hover {
+  color: var(--brand-strong);
+}
+.tsb__segments button[aria-pressed='true'] {
+  background: var(--brand-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 40%, transparent);
+  color: var(--brand-strong);
+}
+.tsb__segments button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+/* What the axis currently shows; doubles as the plot's running caption. */
+.tsb .tsb__note {
+  margin: 0 0 0.35rem;
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+/* --- Row chart -------------------------------------------------------------
+ * One row per circuit on a shared, decade-aligned log axis. Decades are evenly
+ * spaced, so the grid is one repeating gradient sized by `--decades`, inset by
+ * `--tsb-inset` so a mark at either end of the axis is never clipped. */
+.tsb__chart {
+  --decades: 4;
+}
+.tsb__head,
+.tsb__row {
+  display: grid;
+  align-items: center;
+  column-gap: 0.65rem;
+  grid-template-areas: 'name plot value';
+  grid-template-columns: 11rem minmax(0, 1fr) 8.8rem;
+}
+.tsb--compare .tsb__head,
+.tsb--compare .tsb__row {
+  grid-template-areas: 'name k plot value';
+  grid-template-columns: 11rem 1.5rem minmax(0, 1fr) 4.4rem;
+}
+.tsb__head {
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.tsb__head-name {
+  grid-area: name;
+}
+.tsb__head-k {
+  grid-area: k;
+  text-align: right;
+}
+.tsb__head-unit {
+  grid-area: value;
+  text-align: right;
+}
+.tsb__ticks {
+  position: relative;
+  grid-area: plot;
+  height: 1.1rem;
+  margin-inline: var(--tsb-inset);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+.tsb__tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.tsb__tick:first-child {
+  transform: translateX(calc(-1 * var(--tsb-inset)));
+}
+.tsb__tick:last-child {
+  transform: translateX(calc(-100% + var(--tsb-inset)));
+}
+
+.tsb__row {
+  border-bottom: 1px solid var(--color-border);
+}
+.tsb__name {
+  display: grid;
+  grid-area: name;
+  min-width: 0;
+  padding: 0.5rem 0;
+  gap: 0.1rem;
+}
+.tsb .tsb__name a,
+.tsb__name-text {
+  color: var(--color-fg);
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-decoration-color: color-mix(in srgb, var(--brand) 55%, transparent);
+  text-underline-offset: 3px;
+}
+.tsb .tsb__name a:hover {
+  color: var(--brand-strong);
+}
+.tsb .tsb__name a:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.tsb__meta {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+.tsb__tag {
+  margin-left: 0.35rem;
+  padding: 0 0.35rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.tsb__tag[hidden] {
+  display: none;
+}
+
+.tsb__plot {
+  display: grid;
+  position: relative;
+  grid-area: plot;
+  align-content: center;
+  align-self: stretch;
+  padding: 0.55rem 0;
+  gap: 3px;
+  border-radius: 4px;
+  background-image: linear-gradient(to right, var(--tsb-grid) 1px, transparent 1px);
+  background-position: var(--tsb-inset) 0;
+  background-repeat: repeat-x;
+  background-size: calc((100% - 2 * var(--tsb-inset)) / var(--decades)) 100%;
+  cursor: default;
+}
+.tsb__plot.is-active {
+  background-color: var(--color-surface-hover);
+}
+.tsb__plot:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+/* Relative view: the 1× reference is the left edge, drawn a step stronger. */
+.tsb--compare[data-view='relative'] .tsb__plot::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--tsb-inset);
+  width: 1px;
+  background: color-mix(in srgb, var(--color-muted) 70%, transparent);
+  content: '';
+}
+
+.tsb__lane {
+  position: relative;
+  height: 15px;
+  margin-inline: var(--tsb-inset);
+}
+.tsb__stem {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: var(--x);
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--tsb-color) 50%, transparent);
+}
+.tsb__mark {
+  position: absolute;
+  top: 50%;
+  left: var(--x);
+  width: 12px;
+  height: 12px;
+  overflow: visible;
+  transform: translate(-50%, -50%);
+}
+.tsb__lane:not([data-kind='ok']) .tsb__stem,
+.tsb__lane:not([data-kind='ok']) .tsb__mark {
+  display: none;
+}
+.tsb__row[hidden],
+.tsb--compare[data-metric='compile'] [data-sampling-only],
+.tsb--bars[data-metric='compile'] [data-sampling-only] {
+  display: none;
+}
+.tsb__lane[hidden],
+.tsb__ks [hidden],
+.tsb__values [hidden] {
+  display: none;
+}
+.tsb .tsb__more {
+  margin: 0.6rem 0 0;
+  padding: 0.35rem 0;
+  border: 0;
+  background: none;
+  color: var(--brand-strong);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+.tsb .tsb__more:hover {
+  text-decoration: underline;
+}
+.tsb .tsb__more:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Compare: the stem spans baseline → target and the open mark is the baseline. */
+.tsb__lane .tsb__mark--base {
+  left: var(--from);
+}
+.tsb__lane:not([data-compare]) .tsb__mark--base {
+  display: none;
+}
+.tsb__lane[data-compare] .tsb__stem {
+  left: min(var(--from), var(--x));
+  width: calc(max(var(--from), var(--x)) - min(var(--from), var(--x)));
+}
+
+/* K column and value column: one line per lane, aligned with the lanes. */
+.tsb__ks,
+.tsb__values {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.tsb__ks {
+  grid-area: k;
+  color: var(--color-muted);
+}
+.tsb__values {
+  grid-area: value;
+  color: var(--color-muted);
+}
+.tsb__ks span,
+.tsb__values span {
+  height: 15px;
+  line-height: 15px;
+  white-space: nowrap;
+}
+/* The fastest engine in a row carries the ink; the rest stay secondary. */
+.tsb__values .is-best {
+  color: var(--color-fg);
+  font-weight: 900;
+}
+.tsb__values [data-kind='pending'],
+.tsb__values [data-kind='na'],
+.tsb__readout [data-kind='pending'],
+.tsb__readout [data-kind='na'] {
+  font-style: italic;
+}
+
+/* --- Lanes on one circuit (TsimStimComparison) --------------------------------
+ * The comparison's line-and-mark lanes, one row per simulator. Stim's line is
+ * dashed: it samples a Clifford proxy, not the measured circuit. */
+.tsb--bars .tsb__head,
+.tsb--bars .tsb__row {
+  grid-template-columns: 13.5rem minmax(0, 1fr) 4.4rem;
+}
+.tsb--bars .tsb__note-title {
+  margin-right: 0.45rem;
+  color: var(--color-fg);
+  font-weight: 700;
+  text-decoration-color: color-mix(in srgb, var(--brand) 55%, transparent);
+  text-underline-offset: 3px;
+}
+.tsb--bars a.tsb__note-title:hover {
+  color: var(--brand-strong);
+}
+.tsb--bars a.tsb__note-title:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.tsb__name-engine {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+/* A simulator that cannot run the setting keeps its row, labelled in the lane. */
+.tsb__lane-note {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-style: italic;
+  white-space: nowrap;
+}
+.tsb__lane:not([data-kind='na']) .tsb__lane-note {
+  display: none;
+}
+.tsb__stem--proxy {
+  background: repeating-linear-gradient(
+    to right,
+    color-mix(in srgb, var(--tsb-color) 70%, transparent) 0 5px,
+    transparent 5px 9px
+  );
+}
+
+/* --- Release dumbbells ----------------------------------------------------- */
+.tsb__lane--dumbbell {
+  height: 22px;
+}
+.tsb__span {
+  position: absolute;
+  top: 50%;
+  left: var(--from);
+  width: calc(var(--to) - var(--from));
+  height: 2px;
+  margin-top: -1px;
+  background: color-mix(in srgb, var(--viz-series-1) 55%, transparent);
+}
+.tsb__lane--dumbbell .tsb__mark {
+  width: 14px;
+  height: 14px;
+}
+.tsb__readout {
+  display: grid;
+  grid-area: value;
+  justify-items: end;
+  padding: 0.45rem 0;
+  gap: 0.05rem;
+  text-align: right;
+}
+.tsb__speedup {
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.tsb__speedup[data-kind='pending'],
+.tsb__speedup[data-kind='na'] {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+.tsb__speedup-note,
+.tsb__from-to {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.tsb__panel[hidden] {
+  display: none;
+}
+
+/* --- Tooltip -------------------------------------------------------------- */
+.tsb__tip {
+  position: fixed;
+  z-index: 60;
+  width: max-content;
+  max-width: min(23rem, calc(100vw - 1rem));
+  padding: 0.6rem 0.75rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+  box-shadow: 0 16px 36px -18px rgb(0 0 0 / 55%);
+  color: var(--color-fg);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  pointer-events: none;
+}
+.tsb__tip[hidden] {
+  display: none;
+}
+.tsb .tsb__tip p {
+  margin: 0;
+}
+.tsb .tsb__tip-title {
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+.tsb .tsb__tip-meta {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+.tsb__tip-item {
+  margin-top: 0.45rem;
+}
+.tsb__tip-head {
+  display: grid;
+  align-items: center;
+  gap: 0.45rem;
+  grid-template-columns: 0.8rem minmax(0, 1fr) auto;
+}
+.tsb__tip-name {
+  color: var(--color-muted);
+  font-weight: 700;
+}
+/* Values lead in the tooltip: the reader has the series, wants the number. */
+.tsb__tip-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
+.tsb .tsb__tip-notes {
+  padding-left: 1.25rem;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+.tsb .tsb__tip-foot {
+  margin-top: 0.45rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.35rem;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+
+/* --- Disclosures + tables -------------------------------------------------- */
+.tsb__details,
+.tsb__table {
+  margin-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+}
+.tsb__table {
+  margin-top: 0.75rem;
+}
+.tsb__details > summary,
+.tsb__table > summary {
+  color: var(--brand-strong);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.tsb__details > summary:focus-visible,
+.tsb__table > summary:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.tsb__specs {
+  display: grid;
+  margin: 0.85rem 0 0;
+  gap: 0.1rem 1rem;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+.tsb__specs dt {
+  color: var(--color-fg);
+  font-weight: 700;
+}
+.tsb__specs dd {
+  margin: 0 0 0.5rem;
+  color: var(--color-muted);
+}
+.tsb__scroll {
+  overflow-x: auto;
+}
+.tsb table {
+  width: 100%;
+  margin: 0.85rem 0 0;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+.tsb caption {
+  margin-bottom: 0.3rem;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: left;
+}
+.tsb th,
+.tsb td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.3rem 0.45rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.tsb thead th {
+  color: var(--color-muted);
+  font-weight: 700;
+  vertical-align: bottom;
+}
+.tsb tbody th {
+  color: var(--color-fg);
+  text-align: left;
+}
+.tsb th[scope='colgroup'] {
+  text-align: center;
+}
+.tsb td[data-kind='na'],
+.tsb td[data-kind='pending'] {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+/* --- K table ---------------------------------------------------------------- */
+.tsb--width table {
+  margin-top: 0;
+  font-size: 0.84rem;
+}
+.tsb--width thead th {
+  white-space: nowrap;
+}
+.tsb--width thead th:first-child {
+  text-align: left;
+}
+/* "Active width K" spans the three engine columns. */
+.tsb .tsb__group-row td {
+  border-bottom: 0;
+}
+.tsb .tsb__group-row th {
+  padding-bottom: 0.15rem;
+  color: var(--color-fg);
+  text-align: center;
+}
+.tsb__th-engine {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.tsb__k {
+  display: inline-block;
+  min-width: 2.2rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 6px;
+  text-align: center;
+}
+.tsb__k--none {
+  color: var(--color-muted);
+}
+/* The lowest K per row is bold. */
+.tsb__k--lowest {
+  color: var(--color-fg);
+  font-weight: 900;
+}
+.tsb .tsb__empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.84rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tsb__mark {
+    transition: left 0.3s ease;
+  }
+  .tsb__stem {
+    transition:
+      left 0.3s ease,
+      width 0.3s ease;
+  }
+}
+
+/* Touch: segment buttons, legend toggles and disclosure summaries reach the 44px
+ * minimum, and circuit links grow their hit box without moving a glyph (block
+ * padding cancelled by an equal negative margin). Same break the other blog
+ * figures use. */
+@media (max-width: 50rem) {
+  .tsb__segments button {
+    min-height: 2.75rem;
+    padding-inline: 0.9rem;
+  }
+  .tsb .tsb__legend {
+    row-gap: 0;
+  }
+  .tsb .tsb__legend-toggle {
+    min-height: 2.75rem;
+    margin-block: 0;
+  }
+  .tsb__details > summary,
+  .tsb__table > summary {
+    min-height: 2.75rem;
+    padding: 0.75rem 0;
+  }
+  .tsb .tsb__name a,
+  .tsb--width tbody th a {
+    display: inline-block;
+    margin-block: -0.85rem;
+    padding-block: 0.85rem;
+  }
+}
+
+/* Narrow cards: the circuit name takes its own line above the plot, so the axis
+ * keeps most of the width. Keyed to the chart's own width (a container query on
+ * `.tsb__chart`, not on `.tsb`: layout containment there would turn the card into
+ * the fixed-position tooltip's containing block). Every other tick label drops
+ * wherever the plot column gets too narrow for all of them. */
+.tsb__chart {
+  container-type: inline-size;
+}
+@container (max-width: 34rem) {
+  .tsb__head,
+  .tsb__row {
+    grid-template-areas:
+      'name name'
+      'plot value';
+    grid-template-columns: minmax(0, 1fr) 7rem;
+  }
+  .tsb__speedup {
+    font-size: 1.05rem;
+  }
+  .tsb--compare .tsb__head,
+  .tsb--compare .tsb__row {
+    grid-template-areas:
+      'name name name'
+      'k plot value';
+    grid-template-columns: 1.3rem minmax(0, 1fr) 4rem;
+    column-gap: 0.45rem;
+  }
+  .tsb--bars .tsb__head,
+  .tsb--bars .tsb__row {
+    grid-template-columns: minmax(0, 1fr) 4rem;
+  }
+  .tsb__head-name {
+    display: none;
+  }
+  .tsb__name {
+    padding-bottom: 0;
+  }
+  .tsb__plot {
+    padding-top: 0.35rem;
+  }
+}
+@container (max-width: 30rem) {
+  .tsb__tick--minor {
+    display: none;
+  }
+}
+@container (min-width: 34rem) and (max-width: 42rem) {
+  .tsb__tick--minor {
+    display: none;
+  }
+}
+
+/* Phones: small text steps up to the 12px floor. */
+@media (max-width: 40rem) {
+  .tsb .tsb__eyebrow,
+  .tsb code,
+  .tsb__head,
+  .tsb__meta,
+  .tsb__ks,
+  .tsb__values,
+  .tsb__speedup-note,
+  .tsb__from-to,
+  .tsb__control-label,
+  .tsb .tsb__tip-meta,
+  .tsb .tsb__tip-notes,
+  .tsb .tsb__tip-foot,
+  .tsb table,
+  .tsb caption {
+    font-size: 0.75rem;
+  }
+  .tsb__specs {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .tsb__specs dt {
+    margin-top: 0.5rem;
+  }
+  /* The K table keeps all five columns on a phone: engine names wrap under
+   * their marker instead of pushing the last column into a scroller. */
+  .tsb--width thead th {
+    white-space: normal;
+  }
+  .tsb__th-engine {
+    display: inline-grid;
+    justify-items: end;
+    gap: 0.15rem;
+  }
+  .tsb--width th,
+  .tsb--width td {
+    padding-inline: 0.3rem;
+  }
+}
+
+/* components/TsimCompilationSteps.css */
+/*
+ * TsimCompilationSteps: the step-through of Tsim's compilation stages. The card,
+ * segment buttons and screen-reader helper come from TsimBenchmarks.css (`.tsb`);
+ * this sheet adds the step navigation, the circuit listing, the ZX canvases and
+ * the Pauli program table.
+ *
+ * The ZX viewer (zxparam's, vendored) writes its colours as SVG presentation
+ * attributes. CSS outranks presentation attributes, so the rules under
+ * `.tcs__canvas svg` retheme its ink for light and dark without touching it.
+ */
+.tcs {
+  --tcs-x: var(--viz-series-2);
+  --tcs-z: var(--viz-series-3);
+  --tcs-y: var(--viz-series-1);
+  --tcs-phase: #2747d6;
+  --tcs-zx-ink: var(--color-fg);
+}
+:root:not([data-theme='light']) .tcs {
+  --tcs-phase: #9db4ff;
+  --tcs-zx-ink: #b4b7c6;
+}
+
+/* Class rules below set `display`; keep the `hidden` attribute in charge. */
+.tcs [hidden] {
+  display: none !important;
+}
+
+/* --- Navigation ------------------------------------------------------------- */
+.tcs__nav {
+  display: grid;
+  align-items: center;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+}
+.tcs .tcs__nav-button {
+  min-height: 2.5rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-bg);
+  color: var(--brand-strong);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tcs .tcs__nav-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--brand) 55%, var(--color-border));
+  background: var(--brand-soft);
+}
+.tcs .tcs__nav-button:disabled {
+  color: var(--color-muted);
+  cursor: default;
+  opacity: 0.55;
+}
+.tcs .tcs__nav-button:focus-visible,
+.tcs__dots button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.tcs .tcs__where {
+  display: flex;
+  margin: 0;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  line-height: 1.25;
+}
+.tcs__count {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.tcs__step-title {
+  font-size: clamp(1rem, 2.6vw, 1.2rem);
+  font-weight: 900;
+}
+.tcs__sub {
+  min-height: 1.1em;
+  color: var(--brand-strong);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.tcs .tcs__dots {
+  display: flex;
+  margin: 0.7rem 0 1.1rem;
+  padding: 0;
+  justify-content: center;
+  gap: 0.15rem;
+  list-style: none;
+}
+.tcs .tcs__dots li {
+  margin: 0;
+}
+.tcs__dots button {
+  display: block;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.tcs__dots button::before {
+  display: block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin: auto;
+  border-radius: 50%;
+  background: var(--color-border);
+  content: '';
+  transition: background 0.2s, transform 0.2s;
+}
+.tcs__dots button[aria-current='step']::before {
+  background: var(--brand);
+  transform: scale(1.35);
+}
+
+/* Sub-step dashes: a step with several parts shows them in place of its dot
+ * while it is current. */
+.tcs .tcs__dots > li {
+  display: flex;
+  align-items: center;
+}
+.tcs__dots button[hidden] {
+  display: none;
+}
+.tcs .tcs__subdots {
+  display: flex;
+  margin: 0 0.35rem;
+  padding: 0;
+  gap: 2px;
+  list-style: none;
+}
+.tcs .tcs__subdots[hidden] {
+  display: none;
+}
+.tcs .tcs__subdots li {
+  margin: 0;
+}
+/* The parts read as one elongated dot, cut into segments: same height as a
+ * current dot, rounded only at the two ends. */
+.tcs .tcs__subdots button {
+  display: block;
+  width: 0.8rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.tcs .tcs__subdots button::before {
+  display: block;
+  width: 100%;
+  height: 0.75rem;
+  margin: auto 0;
+  border-radius: 0;
+  background: var(--color-border);
+  content: '';
+  transform: none;
+  transition: background 0.2s;
+}
+.tcs .tcs__subdots li:first-child button::before {
+  border-radius: 999px 0 0 999px;
+}
+.tcs .tcs__subdots li:last-child button::before {
+  border-radius: 0 999px 999px 0;
+}
+.tcs .tcs__subdots button.is-done::before {
+  background: color-mix(in srgb, var(--brand) 40%, var(--color-border));
+}
+.tcs .tcs__subdots button[aria-current='step']::before {
+  background: var(--brand);
+  transform: none;
+}
+.tcs__subdots button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+/* --- Panel text ------------------------------------------------------------- */
+.tcs .tcs__lead {
+  margin: 0 0 0.7rem;
+  max-width: 46rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+.tcs .tcs__lead strong {
+  font-weight: 900;
+}
+.tcs .tcs__facts {
+  display: flex;
+  margin: 0 0 0.8rem;
+  padding: 0;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+}
+.tcs .tcs__facts li {
+  margin: 0;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+}
+.tcs__facts strong {
+  color: var(--color-fg);
+  font-weight: 900;
+}
+.tcs__was {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+.tcs .tcs__note {
+  margin: 0.55rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.76rem;
+}
+/* --- Stim circuit --------------------------------------------------------------- */
+.tcs {
+  --tcs-code-instruction: #8250df;
+  --tcs-code-measure: #0a63c9;
+  --tcs-code-args: #b35900;
+  --tcs-code-rec: #1a7f37;
+  --tcs-code-pauli: #b3245f;
+}
+:root:not([data-theme='light']) .tcs {
+  --tcs-code-instruction: #cba6ff;
+  --tcs-code-measure: #7cc0ff;
+  --tcs-code-args: #ffb36b;
+  --tcs-code-rec: #7ee2a0;
+  --tcs-code-pauli: #ff9ec3;
+}
+.tcs .tcs__code {
+  overflow: auto;
+  max-height: 20rem;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--sl-font-mono);
+  font-size: 0.74rem;
+  line-height: 1.55;
+  white-space: pre;
+}
+.tcs__tok--instruction {
+  color: var(--tcs-code-instruction);
+  font-weight: 700;
+}
+.tcs__tok--measure {
+  color: var(--tcs-code-measure);
+  font-weight: 700;
+}
+.tcs__tok--annotation {
+  color: var(--color-muted);
+  font-weight: 700;
+}
+.tcs__tok--args {
+  color: var(--tcs-code-args);
+}
+.tcs__tok--rec {
+  color: var(--tcs-code-rec);
+}
+.tcs__tok--pauli {
+  color: var(--tcs-code-pauli);
+}
+
+/* --- ZX canvases ------------------------------------------------------------------ */
+.tcs__zx {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+}
+.tcs__zx-tools {
+  display: flex;
+  padding: 0.45rem 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.tcs .tcs__facts--tools {
+  margin: 0;
+}
+.tcs__canvas {
+  overflow: hidden;
+  padding: 0.25rem;
+}
+.tcs__canvas[data-zoom='full'] {
+  overflow: auto;
+  max-height: min(70vh, 40rem);
+  overscroll-behavior: contain;
+}
+/* The viewer adds a scalar caption above the SVG; the sampler ignores the scalar. */
+.tcs__canvas > div {
+  display: none;
+}
+.tcs__canvas svg {
+  display: block;
+  margin: 0 auto;
+  touch-action: pan-x pan-y;
+}
+.tcs__canvas svg g.node > g {
+  touch-action: none;
+}
+.tcs__canvas svg [stroke='black'] {
+  stroke: var(--tcs-zx-ink);
+}
+.tcs__canvas svg [fill='#000000'] {
+  fill: var(--tcs-zx-ink);
+}
+.tcs__canvas svg text[fill='#00d'] {
+  fill: var(--tcs-phase);
+}
+.tcs__canvas svg text[fill='#000'],
+.tcs__canvas svg text[fill='#999'] {
+  fill: var(--color-muted);
+}
+
+/* --- Noise basis ---------------------------------------------------------------- */
+.tcs .tcs__basis {
+  margin: 0 0 0.8rem;
+}
+.tcs .tcs__basis > summary {
+  color: var(--brand-strong);
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tcs .tcs__basis-list {
+  overflow: auto;
+  max-height: 16rem;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+  list-style: none;
+}
+.tcs .tcs__basis-list li {
+  display: grid;
+  margin: 0 0 0.35rem;
+  grid-template-columns: 2.6rem 1fr;
+  gap: 0.4rem;
+  font-family: var(--sl-font-mono);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+.tcs__basis-bit {
+  color: var(--color-fg);
+  font-weight: 700;
+}
+.tcs__basis-bit::after {
+  color: var(--color-muted);
+  font-weight: 400;
+  content: ' =';
+}
+.tcs__basis-errors {
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
+/* --- Pauli program ----------------------------------------------------------------- */
+.tcs__program-wrap {
+  overflow-x: auto;
+}
+.tcs .tcs__program {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.tcs .tcs__program th,
+.tcs .tcs__program td {
+  padding: 0.28rem 0.4rem;
+  border-bottom: 1px solid var(--tsb-grid);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.tcs .tcs__program thead th {
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tcs .tcs__program tbody tr {
+  background: var(--color-surface);
+}
+.tcs .tcs__num {
+  width: 1.6rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.tcs__pauli-head > span[aria-hidden] {
+  display: inline-flex;
+  padding-left: 0.9rem;
+}
+.tcs__pauli-head > span[aria-hidden] > span {
+  width: 1.45rem;
+  text-align: center;
+  text-transform: none;
+}
+.tcs .tcs__pauli {
+  font-family: var(--sl-font-mono);
+}
+.tcs__sign {
+  display: inline-block;
+  width: 0.9rem;
+  color: var(--color-muted);
+}
+.tcs__p {
+  display: inline-block;
+  width: 1.35rem;
+  margin-right: 0.1rem;
+  border-radius: 4px;
+  font-weight: 700;
+  line-height: 1.45rem;
+  text-align: center;
+}
+.tcs__p--I {
+  color: var(--color-muted);
+}
+.tcs__p--X {
+  background: color-mix(in srgb, var(--tcs-x) 22%, transparent);
+  color: var(--tcs-x);
+}
+.tcs__p--Z {
+  background: color-mix(in srgb, var(--tcs-z) 22%, transparent);
+  color: var(--tcs-z);
+}
+.tcs__p--Y {
+  background: color-mix(in srgb, var(--tcs-y) 22%, transparent);
+  color: var(--tcs-y);
+}
+.tcs .tcs__op--measure .tcs__what {
+  font-weight: 700;
+}
+.tcs .tcs__noise {
+  font-family: var(--sl-font-mono);
+  font-size: 0.74rem;
+}
+.tcs__none,
+.tcs__bits {
+  color: var(--color-muted);
+}
+.tcs__bits--shared {
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--tcs-x) 18%, transparent);
+  color: var(--tcs-x);
+  font-weight: 700;
+}
+.tcs .tcs__k-head,
+.tcs .tcs__k {
+  width: 28%;
+  min-width: 6rem;
+}
+.tcs .tcs__k {
+  position: relative;
+}
+.tcs__bar {
+  display: inline-block;
+  width: calc(var(--k) / var(--k-max) * (100% - 1.6rem));
+  height: 0.62rem;
+  margin-right: 0.35rem;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--viz-series-1) 45%, transparent);
+  vertical-align: middle;
+  transition: width 0.35s ease;
+}
+.tcs__k-value {
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+.tcs .is-peak .tcs__bar {
+  background: var(--viz-series-1);
+}
+.tcs .is-peak .tcs__k-value {
+  color: var(--color-fg);
+  font-weight: 900;
+}
+
+/* Scheduling: rows still to be placed sit below the divider, quieter. */
+.tcs .tcs__divider td {
+  padding: 0.5rem 0.4rem 0.3rem;
+  border-bottom: 1px dashed var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tcs .tcs__program tr.is-waiting > td {
+  opacity: 0.5;
+}
+.tcs .tcs__program tr.is-waiting.is-chain > td,
+.tcs .tcs__program tr.is-waiting.is-candidate > td {
+  opacity: 1;
+}
+.tcs .tcs__program tr.is-chain > td:first-child,
+.tcs .tcs__program tr.is-candidate > td:first-child {
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+.tcs .tcs__program tr.is-candidate {
+  background: var(--brand-soft);
+}
+/* Rows the round just placed. */
+.tcs .tcs__program tr.is-new {
+  background: color-mix(in srgb, var(--brand-soft) 70%, var(--color-surface));
+}
+.tcs .tcs__program tr.is-pending .tcs__what {
+  color: var(--brand-strong);
+}
+/* A trial width is hypothetical: hatched, not solid. */
+.tcs .is-trial .tcs__bar {
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--viz-series-1) 55%, transparent) 0 3px,
+    transparent 3px 6px
+  );
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--viz-series-1) 60%, transparent);
+}
+.tcs .is-trial.is-peak .tcs__bar {
+  background: repeating-linear-gradient(135deg, var(--viz-series-1) 0 3px, transparent 3px 6px);
+}
+
+.tcs .tcs__candidates {
+  display: flex;
+  margin: 0 0 0.8rem;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.tcs .tcs__candidates button {
+  display: grid;
+  min-width: 6.5rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tcs .tcs__candidates button[aria-pressed='true'] {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+.tcs .tcs__candidates button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+.tcs__candidate-name {
+  font-family: var(--sl-font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.tcs__candidate-peak {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.is-winner .tcs__candidate-peak::after {
+  color: var(--brand-strong);
+  content: ' ✓';
+}
+.tcs__candidate-chain {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+}
+
+/* --- Clifford frame ----------------------------------------------------------------
+ * Faded: a Z on a qubit in |0⟩, which drops out. Dashed: a free axis of the array. */
+.tcs__head-title {
+  display: block;
+  margin-bottom: 0.15rem;
+}
+.tcs .tcs__program--frame thead th {
+  vertical-align: bottom;
+}
+.tcs__p.is-dropped {
+  opacity: 0.2;
+}
+.tcs__p--free {
+  box-sizing: border-box;
+  border: 1px dashed var(--color-border);
+  line-height: calc(1.45rem - 2px);
+}
+.tcs__axis {
+  margin-left: 0.45rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--viz-series-1) 14%, transparent);
+  color: var(--brand-strong);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+/* --- Trajectory sharing -------------------------------------------------------------
+ * Orange: the noise bit that reaches the amplitudes. Purple: measurement outcomes,
+ * which split trajectories and can flip later signs. */
+.tcs__term {
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+  font-family: var(--sl-font-mono);
+  font-weight: 700;
+}
+.tcs__term--f {
+  background: color-mix(in srgb, var(--tcs-x) 18%, transparent);
+  color: var(--tcs-x);
+}
+.tcs__term--noise {
+  background: color-mix(in srgb, var(--color-muted) 14%, transparent);
+  color: var(--color-muted);
+  font-weight: 400;
+}
+.tcs__term--b {
+  background: color-mix(in srgb, var(--viz-series-1) 18%, transparent);
+  color: var(--brand-strong);
+}
+.tcs__terms {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.tcs__split {
+  color: var(--brand-strong);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.tcs__split::before {
+  content: '↳ ';
+}
+.tcs .tcs__program--sharing tr.is-split {
+  background: color-mix(in srgb, var(--brand-soft) 60%, var(--color-surface));
+}
+.tcs__bar--t {
+  width: calc(var(--t) / var(--t-max) * (100% - 2rem));
+}
+.tcs .tcs__program--sharing tr.is-split .tcs__bar--t,
+.tcs .tcs__program--sharing tbody tr:last-child .tcs__bar--t {
+  background: var(--viz-series-1);
+}
+.tcs .tcs__outputs {
+  display: grid;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.35rem 1rem;
+  list-style: none;
+}
+.tcs .tcs__outputs li {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.74rem;
+  line-height: 1.9;
+}
+.tcs__output-name {
+  color: var(--color-fg);
+  font-family: var(--sl-font-mono);
+  font-weight: 700;
+}
+.tcs .tcs__lanes {
+  margin: 0.7rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+}
+.tcs__lanes strong {
+  color: var(--color-fg);
+}
+
+/* --- Stabilizer tooltip ------------------------------------------------------------
+ * One row per generator, with fixed-width tiles in the same columns as the
+ * operation's row on top, so anticommuting positions line up. */
+.tcs {
+  position: relative;
+}
+.tcs .tcs__program tr[data-op] {
+  cursor: help;
+}
+.tcs .tcs__program tr[data-op]:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+.tcs__tip {
+  position: absolute;
+  z-index: 20;
+  padding: 0.55rem 0.7rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+  font-size: 0.74rem;
+  pointer-events: none;
+}
+.tcs .tcs__tip-section {
+  margin: 0 0 0.25rem;
+  color: var(--color-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tcs .tcs__tip-note {
+  margin: 0;
+  color: var(--color-muted);
+}
+/* Same font size as the program rows, so the tiles below keep their size. */
+.tcs__tip-row {
+  display: flex;
+  margin-bottom: 0.12rem;
+  align-items: center;
+  font-family: var(--sl-font-mono);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.tcs__tip-row.is-anti {
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--tcs-x) 10%, transparent);
+}
+
+/* --- Phones ------------------------------------------------------------------------- */
+@media (max-width: 40rem) {
+  .tcs__nav {
+    gap: 0.4rem;
+  }
+  .tcs .tcs__nav-button {
+    padding-inline: 0.7rem;
+  }
+  .tcs__nav-label {
+    display: none;
+  }
+  .tcs .tcs__program {
+    font-size: 0.74rem;
+  }
+  .tcs .tcs__program th,
+  .tcs .tcs__program td {
+    padding-inline: 0.25rem;
+  }
+  .tcs .tcs__program td.tcs__what,
+  .tcs .tcs__program td.tcs__noise {
+    white-space: normal;
+  }
+  .tcs .tcs__program td.tcs__what {
+    min-width: 4.2rem;
+  }
+  .tcs .tcs__program td.tcs__noise {
+    min-width: 3rem;
+    font-size: 0.64rem;
+    line-height: 1.3;
+  }
+  .tcs .tcs__k-head,
+  .tcs .tcs__k {
+    width: auto;
+    min-width: 3.6rem;
+  }
+  .tcs__p {
+    width: 1.15rem;
+  }
+  .tcs__tip-row {
+    font-size: 0.74rem;
+  }
+  .tcs__pauli-head > span[aria-hidden] > span {
+    width: 1.25rem;
+  }
+  .tcs .tcs__frame-col {
+    display: none;
+  }
+  .tcs__axis {
+    display: inline-block;
+    margin: 0.1rem 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tcs__bar,
+  .tcs__dots button::before {
+    transition: none;
+  }
+}
+
+html, body { margin: 0; background: #ffffff; }
+body { padding: 4px; font-family: 'Lato', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: var(--color-fg); }
+.tsb { margin: 0; }
+</style>
+</head>
+<body>
+<figure class="tsb tcs" data-tcs aria-label="Tsim's compilation of a Steane-encoded distillation circuit, step by step"><div class="tcs__nav"><button type="button" class="tcs__nav-button" data-prev disabled aria-label="Previous"><span aria-hidden="true">‹</span><span class="tcs__nav-label"> Previous</span></button><p class="tcs__where" aria-live="polite"><span class="tcs__count" data-count>1 / 4</span><span class="tcs__step-title" data-title>Pauli program</span><span class="tcs__sub" data-sub></span></p><button type="button" class="tcs__nav-button" data-next aria-label="Next"><span class="tcs__nav-label">Next </span><span aria-hidden="true">›</span></button></div><ol class="tcs__dots"><li><button type="button" data-goto="0" data-stage="0" aria-label="Step 1: Pauli program" aria-current="step"></button></li><li><button type="button" data-goto="1" data-stage="1" aria-label="Step 2: Scheduling"></button><ol class="tcs__subdots" data-substeps="1" aria-label="Parts of step 2" hidden><li><button type="button" data-subgoto="1" aria-label="Part 1 of 8: The rules"></button></li><li><button type="button" data-subgoto="2" aria-label="Part 2 of 8: Try each measurement"></button></li><li><button type="button" data-subgoto="3" aria-label="Part 3 of 8: Run the best"></button></li><li><button type="button" data-subgoto="4" aria-label="Part 4 of 8: Try each measurement"></button></li><li><button type="button" data-subgoto="5" aria-label="Part 5 of 8: Run the best"></button></li><li><button type="button" data-subgoto="6" aria-label="Part 6 of 8: Try each measurement"></button></li><li><button type="button" data-subgoto="7" aria-label="Part 7 of 8: Run the best"></button></li><li><button type="button" data-subgoto="8" aria-label="Part 8 of 8: Done"></button></li></ol></li><li><button type="button" data-goto="9" data-stage="2" aria-label="Step 3: Active qubits"></button></li><li><button type="button" data-goto="10" data-stage="3" aria-label="Step 4: Trajectory sharing"></button></li></ol><section class="tcs__panel" data-panel="0"><div class="tcs__candidates" data-frame-candidates="2" role="group" aria-label="Trial runs" hidden><button type="button" data-candidate="0" aria-pressed="true" class="is-winner"><span class="tcs__candidate-name">obs[0]</span><span class="tcs__candidate-peak">peak K = 3</span><span class="tcs__candidate-chain">6 ops first</span></button><button type="button" data-candidate="1" aria-pressed="false"><span class="tcs__candidate-name">obs[1]</span><span class="tcs__candidate-peak">peak K = 4</span><span class="tcs__candidate-chain">6 ops first</span></button><button type="button" data-candidate="2" aria-pressed="false"><span class="tcs__candidate-name">obs[2]</span><span class="tcs__candidate-peak">peak K = 4</span><span class="tcs__candidate-chain">7 ops first</span></button><button type="button" data-candidate="3" aria-pressed="false"><span class="tcs__candidate-name">obs[3]</span><span class="tcs__candidate-peak">peak K = 4</span><span class="tcs__candidate-chain">7 ops first</span></button><button type="button" data-candidate="4" aria-pressed="false"><span class="tcs__candidate-name">obs[4]</span><span class="tcs__candidate-peak">peak K = 4</span><span class="tcs__candidate-chain">6 ops first</span></button></div><div class="tcs__candidates" data-frame-candidates="4" role="group" aria-label="Trial runs" hidden><button type="button" data-candidate="0" aria-pressed="false"><span class="tcs__candidate-name">obs[1]</span><span class="tcs__candidate-peak">peak K = 4</span><span class="tcs__candidate-chain">3 ops first</span></button><button type="button" data-candidate="1" aria-pressed="false"><span class="tcs__candidate-name">obs[2]</span><span class="tcs__candidate-peak">peak K = 4</span><span class="tcs__candidate-chain">3 ops first</span></button><button type="button" data-candidate="2" aria-pressed="false"><span class="tcs__candidate-name">obs[3]</span><span class="tcs__candidate-peak">peak K = 4</span><span class="tcs__candidate-chain">3 ops first</span></button><button type="button" data-candidate="3" aria-pressed="true" class="is-winner"><span class="tcs__candidate-name">obs[4]</span><span class="tcs__candidate-peak">peak K = 3</span><span class="tcs__candidate-chain">2 ops first</span></button></div><div class="tcs__candidates" data-frame-candidates="6" role="group" aria-label="Trial runs" hidden><button type="button" data-candidate="0" aria-pressed="true" class="is-winner"><span class="tcs__candidate-name">obs[1]</span><span class="tcs__candidate-peak">peak K = 3</span><span class="tcs__candidate-chain">1 op first</span></button><button type="button" data-candidate="1" aria-pressed="false"><span class="tcs__candidate-name">obs[2]</span><span class="tcs__candidate-peak">peak K = 3</span><span class="tcs__candidate-chain">2 ops first</span></button><button type="button" data-candidate="2" aria-pressed="false"><span class="tcs__candidate-name">obs[3]</span><span class="tcs__candidate-peak">peak K = 3</span><span class="tcs__candidate-chain">1 op first</span></button></div><div class="tcs__program-wrap"><table class="tcs__program" data-program style="--k-max: 5"><caption class="tsb__sr">Pauli program: one row per operation, its Pauli on q0, q1, q2, q3, q4, its noise-dependent sign and the active width after it</caption><thead><tr><th scope="col" class="tcs__num" title="Position in the order read off the diagram">#</th><th scope="col" class="tcs__pauli-head"><span aria-hidden="true"><span>q0</span><span>q1</span><span>q2</span><span>q3</span><span>q4</span></span><span class="tsb__sr">Pauli</span></th><th scope="col">Operation</th><th scope="col">Noise</th><th scope="col" class="tcs__k-head">K</th></tr></thead><tbody><tr tabindex="0" data-op="0" data-k-read="1" data-k-scheduled="1" class="tcs__op--rotate" style="--k: 1"><td class="tcs__num">1</td><td class="tcs__pauli" aria-label="−ZZIIX"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__what">rotate 0.098π</td><td class="tcs__noise"><span class="tcs__bits">f20</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>1</span></td></tr><tr tabindex="0" data-op="1" data-k-read="2" data-k-scheduled="2" class="tcs__op--rotate" style="--k: 2"><td class="tcs__num">2</td><td class="tcs__pauli" aria-label="+XIIZZ"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__what">rotate 0.098π</td><td class="tcs__noise"><span class="tcs__bits">f20</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>2</span></td></tr><tr tabindex="0" data-op="2" data-k-read="3" data-k-scheduled="3" class="tcs__op--rotate" style="--k: 3"><td class="tcs__num">3</td><td class="tcs__pauli" aria-label="+IYZIZ"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__what">rotate 0.098π</td><td class="tcs__noise"><span class="tcs__bits">f20</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>3</span></td></tr><tr tabindex="0" data-op="3" data-k-read="4" data-k-scheduled="3" class="tcs__op--rotate" style="--k: 4"><td class="tcs__num">4</td><td class="tcs__pauli" aria-label="+IZYZI"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">rotate 0.098π</td><td class="tcs__noise"><span class="tcs__none">–</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>4</span></td></tr><tr tabindex="0" data-op="4" data-k-read="5" data-k-scheduled="3" class="tcs__op--rotate is-peak" style="--k: 5"><td class="tcs__num">5</td><td class="tcs__pauli" aria-label="−ZIZYI"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">rotate 0.098π</td><td class="tcs__noise"><span class="tcs__none">–</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>5</span></td></tr><tr tabindex="0" data-op="5" data-k-read="5" data-k-scheduled="3" class="tcs__op--rotate is-peak" style="--k: 5"><td class="tcs__num">6</td><td class="tcs__pauli" aria-label="−YIIZZ"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__what">rotate π/8</td><td class="tcs__noise"><span class="tcs__bits">f20</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>5</span></td></tr><tr tabindex="0" data-op="6" data-k-read="5" data-k-scheduled="2" class="tcs__op--rotate is-peak" style="--k: 5"><td class="tcs__num">7</td><td class="tcs__pauli" aria-label="+IXZIZ"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__what">rotate −π/8</td><td class="tcs__noise"><span class="tcs__bits">f20</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>5</span></td></tr><tr tabindex="0" data-op="7" data-k-read="5" data-k-scheduled="3" class="tcs__op--rotate is-peak" style="--k: 5"><td class="tcs__num">8</td><td class="tcs__pauli" aria-label="+IZXZI"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">rotate −π/8</td><td class="tcs__noise"><span class="tcs__none">–</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>5</span></td></tr><tr tabindex="0" data-op="8" data-k-read="5" data-k-scheduled="3" class="tcs__op--rotate is-peak" style="--k: 5"><td class="tcs__num">9</td><td class="tcs__pauli" aria-label="−ZIZXI"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">rotate −π/8</td><td class="tcs__noise"><span class="tcs__none">–</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>5</span></td></tr><tr tabindex="0" data-op="9" data-k-read="5" data-k-scheduled="3" class="tcs__op--rotate is-peak" style="--k: 5"><td class="tcs__num">10</td><td class="tcs__pauli" aria-label="+ZZIIY"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span></td><td class="tcs__what">rotate π/8</td><td class="tcs__noise"><span class="tcs__bits">f20</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>5</span></td></tr><tr tabindex="0" data-op="10" data-k-read="4" data-k-scheduled="2" class="tcs__op--measure" style="--k: 4"><td class="tcs__num">11</td><td class="tcs__pauli" aria-label="−XIIII"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">measure → obs[0]</td><td class="tcs__noise"><span class="tcs__bits">f15 ⊕ f16 ⊕ f19</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>4</span></td></tr><tr tabindex="0" data-op="11" data-k-read="3" data-k-scheduled="2" class="tcs__op--measure" style="--k: 3"><td class="tcs__num">12</td><td class="tcs__pauli" aria-label="−XXXIX"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__what">measure → obs[1]</td><td class="tcs__noise"><span class="tcs__bits">f18</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>3</span></td></tr><tr tabindex="0" data-op="12" data-k-read="2" data-k-scheduled="1" class="tcs__op--measure" style="--k: 2"><td class="tcs__num">13</td><td class="tcs__pauli" aria-label="−XIXII"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">measure → obs[2]</td><td class="tcs__noise"><span class="tcs__bits">f15 ⊕ f16 ⊕ f17</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>2</span></td></tr><tr tabindex="0" data-op="13" data-k-read="1" data-k-scheduled="0" class="tcs__op--measure" style="--k: 1"><td class="tcs__num">14</td><td class="tcs__pauli" aria-label="−XXIII"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">measure → obs[3]</td><td class="tcs__noise"><span class="tcs__bits">f16 ⊕ f18 ⊕ f19</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>1</span></td></tr><tr tabindex="0" data-op="14" data-k-read="0" data-k-scheduled="2" class="tcs__op--measure" style="--k: 0"><td class="tcs__num">15</td><td class="tcs__pauli" aria-label="+XIXXX"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__what">measure → obs[4]</td><td class="tcs__noise"><span class="tcs__bits">f15 ⊕ f16 ⊕ f18</span></td><td class="tcs__k"><span class="tcs__bar" aria-hidden="true"></span><span class="tcs__k-value" data-k>0</span></td></tr><tr class="tcs__divider" data-divider hidden><td colspan="5"><span data-waiting></span></td></tr></tbody></table></div><div class="tcs__tip" data-stabilizer-tip role="tooltip" hidden></div></section><section class="tcs__panel" data-panel="1" hidden><div class="tcs__program-wrap"><table class="tcs__program tcs__program--frame"><caption class="tsb__sr">The scheduled program: each operation's Pauli on q0, q1, q2, q3, q4, the same Pauli after Tsim's Clifford gates, and the part of it that acts on the array's axes a0, a1, a2</caption><thead><tr><th scope="col" class="tcs__num">#</th><th scope="col" class="tcs__pauli-head"><span class="tcs__head-title">Pauli</span><span aria-hidden="true"><span>q0</span><span>q1</span><span>q2</span><span>q3</span><span>q4</span></span></th><th scope="col" class="tcs__pauli-head tcs__frame-col"><span class="tcs__head-title">Rewritten</span><span aria-hidden="true"><span>q0</span><span>q1</span><span>q2</span><span>q3</span><span>q4</span></span></th><th scope="col" class="tcs__pauli-head"><span class="tcs__head-title">Compacted</span><span aria-hidden="true"><span>a0</span><span>a1</span><span>a2</span></span></th><th scope="col">Operation</th></tr></thead><tbody><tr class="tcs__op--rotate"><td class="tcs__num">1</td><td class="tcs__pauli" aria-label="−ZZIIX"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__pauli tcs__frame-col" aria-label="−ZZIIX"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__pauli" aria-label="−X00"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span></td><td class="tcs__what">rotate 0.098π</td></tr><tr class="tcs__op--rotate"><td class="tcs__num">2</td><td class="tcs__pauli" aria-label="+XIIZZ"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__pauli tcs__frame-col" aria-label="+XIIZZ"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__pauli" aria-label="+ZX0"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span></td><td class="tcs__what">rotate 0.098π</td></tr><tr class="tcs__op--rotate"><td class="tcs__num">5</td><td class="tcs__pauli" aria-label="−ZIZYI"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli tcs__frame-col" aria-label="−ZIZYI"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli" aria-label="−IZY"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span></td><td class="tcs__what">rotate 0.098π</td></tr><tr class="tcs__op--rotate"><td class="tcs__num">6</td><td class="tcs__pauli" aria-label="−YIIZZ"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__pauli tcs__frame-col" aria-label="−YIIZZ"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__pauli" aria-label="−ZYZ"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__what">rotate π/8</td></tr><tr class="tcs__op--rotate"><td class="tcs__num">9</td><td class="tcs__pauli" aria-label="−ZIZXI"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli tcs__frame-col" aria-label="−ZIZXI"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli" aria-label="−IZX"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__what">rotate −π/8</td></tr><tr class="tcs__op--rotate"><td class="tcs__num">10</td><td class="tcs__pauli" aria-label="+ZZIIY"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span></td><td class="tcs__pauli tcs__frame-col" aria-label="+ZZIIY"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span></td><td class="tcs__pauli" aria-label="+YZI"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">rotate π/8</td></tr><tr class="tcs__op--measure"><td class="tcs__num">11</td><td class="tcs__pauli" aria-label="−XIIII"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli tcs__frame-col" aria-label="−XIIII"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli" aria-label="−IXI"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">measure → obs[0]</td></tr><tr class="tcs__op--rotate"><td class="tcs__num">4</td><td class="tcs__pauli" aria-label="+IZYZI"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli tcs__frame-col" aria-label="+IZYZI"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli" aria-label="+IYZ"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__what">rotate 0.098π</td></tr><tr class="tcs__op--rotate"><td class="tcs__num">8</td><td class="tcs__pauli" aria-label="+IZXZI"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli tcs__frame-col" aria-label="+IZXZI"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli" aria-label="+IXZ"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__what">rotate −π/8</td></tr><tr class="tcs__op--measure"><td class="tcs__num">15</td><td class="tcs__pauli" aria-label="+XIXXX"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__pauli tcs__frame-col" aria-label="+ZIXXX"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__pauli" aria-label="+XXX"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__what">measure → obs[4]</td></tr><tr class="tcs__op--rotate"><td class="tcs__num">3</td><td class="tcs__pauli" aria-label="+IYZIZ"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__pauli tcs__frame-col" aria-label="+IYZII"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli" aria-label="+YZI"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">rotate 0.098π</td></tr><tr class="tcs__op--measure"><td class="tcs__num">12</td><td class="tcs__pauli" aria-label="−XXXIX"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__pauli tcs__frame-col" aria-label="−ZXIXZ"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span></td><td class="tcs__pauli" aria-label="−XIX"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__what">measure → obs[1]</td></tr><tr class="tcs__op--rotate"><td class="tcs__num">7</td><td class="tcs__pauli" aria-label="+IXZIZ"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__pauli tcs__frame-col" aria-label="+IZZXI"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli" aria-label="+0ZX"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__what">rotate −π/8</td></tr><tr class="tcs__op--measure"><td class="tcs__num">13</td><td class="tcs__pauli" aria-label="−XIXII"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli tcs__frame-col" aria-label="−ZIXII"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli" aria-label="−0XI"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">measure → obs[2]</td></tr><tr class="tcs__op--measure"><td class="tcs__num">14</td><td class="tcs__pauli" aria-label="−XXIII"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli tcs__frame-col" aria-label="−ZZIXI"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Z is-dropped" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__pauli" aria-label="−00X"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__what">measure → obs[3]</td></tr></tbody></table></div></section><section class="tcs__panel" data-panel="2" hidden><div class="tcs__program-wrap"><table class="tcs__program tcs__program--sharing" style="--t-max: 6"><caption class="tsb__sr">The program on the array's axes a0, a1, a2: what each rotation's sign depends on, which measurements split the trajectories, and how many trajectories exist after each operation</caption><thead><tr><th scope="col" class="tcs__num">#</th><th scope="col" class="tcs__pauli-head"><span aria-hidden="true"><span>a0</span><span>a1</span><span>a2</span></span><span class="tsb__sr">Pauli on the array</span></th><th scope="col">Operation</th><th scope="col">Depends on</th><th scope="col" class="tcs__k-head">Trajectories</th></tr></thead><tbody><tr class="tcs__op--rotate" style="--t: 1"><td class="tcs__num">1</td><td class="tcs__pauli" aria-label="−X00"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span></td><td class="tcs__what">rotate 0.098π</td><td class="tcs__noise"><span class="tcs__terms"><span class="tcs__term tcs__term--f">f20</span></span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">2</span></td></tr><tr class="tcs__op--rotate" style="--t: 1"><td class="tcs__num">2</td><td class="tcs__pauli" aria-label="+ZX0"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span></td><td class="tcs__what">rotate 0.098π</td><td class="tcs__noise"><span class="tcs__terms"><span class="tcs__term tcs__term--f">f20</span></span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">2</span></td></tr><tr class="tcs__op--rotate" style="--t: 1"><td class="tcs__num">5</td><td class="tcs__pauli" aria-label="−IZY"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span></td><td class="tcs__what">rotate 0.098π</td><td class="tcs__noise"><span class="tcs__none">–</span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">2</span></td></tr><tr class="tcs__op--rotate" style="--t: 1"><td class="tcs__num">6</td><td class="tcs__pauli" aria-label="−ZYZ"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__what">rotate π/8</td><td class="tcs__noise"><span class="tcs__terms"><span class="tcs__term tcs__term--f">f20</span></span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">2</span></td></tr><tr class="tcs__op--rotate" style="--t: 1"><td class="tcs__num">9</td><td class="tcs__pauli" aria-label="−IZX"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__what">rotate −π/8</td><td class="tcs__noise"><span class="tcs__none">–</span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">2</span></td></tr><tr class="tcs__op--rotate" style="--t: 1"><td class="tcs__num">10</td><td class="tcs__pauli" aria-label="+YZI"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">rotate π/8</td><td class="tcs__noise"><span class="tcs__terms"><span class="tcs__term tcs__term--f">f20</span></span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">2</span></td></tr><tr class="tcs__op--measure is-split" style="--t: 2"><td class="tcs__num">11</td><td class="tcs__pauli" aria-label="−IXI"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">measure → obs[0]</td><td class="tcs__noise"><span class="tcs__terms"><span class="tcs__term tcs__term--b">b0</span><span class="tcs__split">splits</span></span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">4</span></td></tr><tr class="tcs__op--rotate" style="--t: 2"><td class="tcs__num">4</td><td class="tcs__pauli" aria-label="+IYZ"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__what">rotate 0.098π</td><td class="tcs__noise"><span class="tcs__none">–</span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">4</span></td></tr><tr class="tcs__op--rotate" style="--t: 2"><td class="tcs__num">8</td><td class="tcs__pauli" aria-label="+IXZ"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span></td><td class="tcs__what">rotate −π/8</td><td class="tcs__noise"><span class="tcs__none">–</span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">4</span></td></tr><tr class="tcs__op--measure is-split" style="--t: 3"><td class="tcs__num">15</td><td class="tcs__pauli" aria-label="+XXX"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__what">measure → obs[4]</td><td class="tcs__noise"><span class="tcs__terms"><span class="tcs__term tcs__term--b">b1</span><span class="tcs__split">splits</span></span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">8</span></td></tr><tr class="tcs__op--rotate" style="--t: 3"><td class="tcs__num">3</td><td class="tcs__pauli" aria-label="+YZI"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--Y" aria-hidden="true">Y</span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">rotate 0.098π</td><td class="tcs__noise"><span class="tcs__terms"><span class="tcs__term tcs__term--f">f20</span></span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">8</span></td></tr><tr class="tcs__op--measure is-split" style="--t: 4"><td class="tcs__num">12</td><td class="tcs__pauli" aria-label="−XIX"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__what">measure → obs[1]</td><td class="tcs__noise"><span class="tcs__terms"><span class="tcs__term tcs__term--b">b2</span><span class="tcs__split">splits</span></span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">16</span></td></tr><tr class="tcs__op--rotate" style="--t: 4"><td class="tcs__num">7</td><td class="tcs__pauli" aria-label="+0ZX"><span class="tcs__sign" aria-hidden="true">+</span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span><span class="tcs__p tcs__p--Z" aria-hidden="true">Z</span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__what">rotate −π/8</td><td class="tcs__noise"><span class="tcs__terms"><span class="tcs__term tcs__term--f">f20</span><span class="tcs__term tcs__term--b">b2</span></span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">16</span></td></tr><tr class="tcs__op--measure is-split" style="--t: 5"><td class="tcs__num">13</td><td class="tcs__pauli" aria-label="−0XI"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span><span class="tcs__p tcs__p--I" aria-hidden="true">·</span></td><td class="tcs__what">measure → obs[2]</td><td class="tcs__noise"><span class="tcs__terms"><span class="tcs__term tcs__term--b">b3</span><span class="tcs__split">splits</span></span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">32</span></td></tr><tr class="tcs__op--measure is-split" style="--t: 6"><td class="tcs__num">14</td><td class="tcs__pauli" aria-label="−00X"><span class="tcs__sign" aria-hidden="true">−</span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span><span class="tcs__p tcs__p--free" aria-hidden="true"> </span><span class="tcs__p tcs__p--X" aria-hidden="true">X</span></td><td class="tcs__what">measure → obs[3]</td><td class="tcs__noise"><span class="tcs__terms"><span class="tcs__term tcs__term--b">b4</span><span class="tcs__split">splits</span></span></td><td class="tcs__k"><span class="tcs__bar tcs__bar--t" aria-hidden="true"></span><span class="tcs__k-value">64</span></td></tr></tbody></table></div><ul class="tcs__outputs" aria-label="Outputs of each shot"><li><span class="tcs__output-name">obs[0]</span> = <span class="tcs__term tcs__term--noise">f15</span> ⊕ <span class="tcs__term tcs__term--noise">f16</span> ⊕ <span class="tcs__term tcs__term--noise">f19</span> ⊕ <span class="tcs__term tcs__term--b">b0</span></li><li><span class="tcs__output-name">obs[1]</span> = <span class="tcs__term tcs__term--noise">f18</span> ⊕ <span class="tcs__term tcs__term--b">b0</span> ⊕ <span class="tcs__term tcs__term--b">b1</span> ⊕ <span class="tcs__term tcs__term--b">b2</span></li><li><span class="tcs__output-name">obs[2]</span> = <span class="tcs__term tcs__term--noise">f15</span> ⊕ <span class="tcs__term tcs__term--noise">f16</span> ⊕ <span class="tcs__term tcs__term--noise">f17</span> ⊕ <span class="tcs__term tcs__term--b">b0</span> ⊕ <span class="tcs__term tcs__term--b">b3</span></li><li><span class="tcs__output-name">obs[3]</span> = <span class="tcs__term tcs__term--noise">f16</span> ⊕ <span class="tcs__term tcs__term--noise">f18</span> ⊕ <span class="tcs__term tcs__term--noise">f19</span> ⊕ <span class="tcs__term tcs__term--b">b0</span> ⊕ <span class="tcs__term tcs__term--b">b2</span> ⊕ <span class="tcs__term tcs__term--b">b4</span></li><li><span class="tcs__output-name">obs[4]</span> = <span class="tcs__term tcs__term--noise">f15</span> ⊕ <span class="tcs__term tcs__term--noise">f16</span> ⊕ <span class="tcs__term tcs__term--noise">f18</span> ⊕ <span class="tcs__term tcs__term--b">b0</span> ⊕ <span class="tcs__term tcs__term--b">b1</span></li></ul><p class="tcs__lanes">Trajectories in one call: 10 shots → <strong>9</strong> · 100 shots → <strong>39</strong> · 1,000 shots → <strong>64</strong> · 10,000 shots → <strong>64</strong> · 65,536 shots → <strong>64</strong></p></section><script type="application/json" data-frames>[{"stage":0,"panel":0,"sub":"","mode":"read","scheduled":null,"candidates":null},{"stage":1,"panel":0,"sub":"The rules","mode":"schedule","scheduled":[],"candidates":null},{"stage":1,"panel":0,"sub":"Try each measurement","mode":"schedule","scheduled":[],"candidates":[{"measurement":10,"chain":[0,1,4,5,8,9],"trial":[1,2,3,3,3,3],"trial_stabilizers":[["ZIIII","IZIII","IIZII","IIIZI"],["IZIII","IIZII","IIIZI"],["IZIII","IIZII"],["IZIII","IIZII"],["IZIII","IIZII"],["IZIII","IIZII"]],"peak":3,"chosen":true},{"measurement":11,"chain":[0,1,2,3,7,9],"trial":[1,2,3,4,4,4],"trial_stabilizers":[["ZIIII","IZIII","IIZII","IIIZI"],["IZIII","IIZII","IIIZI"],["IIZII","IIIZI"],["IIIZI"],["IIIZI"],["IIIZI"]],"peak":4,"chosen":false},{"measurement":12,"chain":[0,1,2,3,5,6,9],"trial":[1,2,3,4,4,4,4],"trial_stabilizers":[["ZIIII","IZIII","IIZII","IIIZI"],["IZIII","IIZII","IIIZI"],["IIZII","IIIZI"],["IIIZI"],["IIIZI"],["IIIZI"],["IIIZI"]],"peak":4,"chosen":false},{"measurement":13,"chain":[1,2,3,4,5,7,8],"trial":[1,2,3,4,4,4,4],"trial_stabilizers":[["IZIII","IIZII","IIIZI","IIIIZ"],["IIZII","IIIZI","IIIIZ"],["IIIZI","IIIIZ"],["IIIIZ"],["IIIIZ"],["IIIIZ"],["IIIIZ"]],"peak":4,"chosen":false},{"measurement":14,"chain":[0,1,3,4,5,7],"trial":[1,2,3,4,4,4],"trial_stabilizers":[["ZIIII","IZIII","IIZII","IIIZI"],["IZIII","IIZII","IIIZI"],["IZIII","IIIZI"],["IZIII"],["IZIII"],["IZIII"]],"peak":4,"chosen":false}]},{"stage":1,"panel":0,"sub":"Run the best","mode":"schedule","scheduled":[0,1,4,5,8,9,10],"candidates":null},{"stage":1,"panel":0,"sub":"Try each measurement","mode":"schedule","scheduled":[0,1,4,5,8,9,10],"candidates":[{"measurement":11,"chain":[2,3,7],"trial":[3,4,4],"trial_stabilizers":[["IIZII","XIIII"],["XIIII"],["XIIII"]],"peak":4,"chosen":false},{"measurement":12,"chain":[2,3,6],"trial":[3,4,4],"trial_stabilizers":[["IIZII","XIIII"],["XIIII"],["XIIII"]],"peak":4,"chosen":false},{"measurement":13,"chain":[2,3,7],"trial":[3,4,4],"trial_stabilizers":[["IIZII","XIIII"],["XIIII"],["XIIII"]],"peak":4,"chosen":false},{"measurement":14,"chain":[3,7],"trial":[3,3],"trial_stabilizers":[["IZIII","XIIII"],["IZIII","XIIII"]],"peak":3,"chosen":true}]},{"stage":1,"panel":0,"sub":"Run the best","mode":"schedule","scheduled":[0,1,4,5,8,9,10,3,7,14],"candidates":null},{"stage":1,"panel":0,"sub":"Try each measurement","mode":"schedule","scheduled":[0,1,4,5,8,9,10,3,7,14],"candidates":[{"measurement":11,"chain":[2],"trial":[3],"trial_stabilizers":[["XIIII","XIXXX"]],"peak":3,"chosen":true},{"measurement":12,"chain":[2,6],"trial":[3,3],"trial_stabilizers":[["XIIII","XIXXX"],["XIIII","XIXXX"]],"peak":3,"chosen":false},{"measurement":13,"chain":[2],"trial":[3],"trial_stabilizers":[["XIIII","XIXXX"]],"peak":3,"chosen":false}]},{"stage":1,"panel":0,"sub":"Run the best","mode":"schedule","scheduled":[0,1,4,5,8,9,10,3,7,14,2,11],"candidates":null},{"stage":1,"panel":0,"sub":"Done","mode":"schedule","scheduled":[0,1,4,5,8,9,10,3,7,14,2,11,6,12,13],"candidates":null},{"stage":2,"panel":1,"sub":"","mode":null,"scheduled":null,"candidates":null},{"stage":3,"panel":2,"sub":"","mode":null,"scheduled":null,"candidates":null}]</script><script type="application/json" data-stabilizers>{"initial":["ZIIII","IZIII","IIZII","IIIZI","IIIIZ"],"read":[["ZIIII","IZIII","IIZII","IIIZI"],["IZIII","IIZII","IIIZI"],["IIZII","IIIZI"],["IIIZI"],[],[],[],[],[],[],["XIIII"],["XIIII","XXXIX"],["XIIII","XXXIX","XIXII"],["XIIII","XXXIX","XIXII","XXIII"],["XIIII","XXXIX","XIXII","XXIII","XIXXX"]],"scheduled":[["ZIIII","IZIII","IIZII","IIIZI"],["IZIII","IIZII","IIIZI"],["IZIII","IIZII"],["IZIII","IIZII"],["IZIII","IIZII"],["IZIII","IIZII"],["IZIII","IIZII","XIIII"],["IZIII","XIIII"],["IZIII","XIIII"],["IZIII","XIIII","XIXXX"],["XIIII","XIXXX"],["XIIII","XIXXX","XXXIX"],["XIIII","XIXXX","XXXIX"],["XIIII","XIXXX","XXXIX","XIXII"],["XIIII","XIXXX","XXXIX","XIXII","XXIII"]],"paulis":["ZZIIX","XIIZZ","IYZIZ","IZYZI","ZIZYI","YIIZZ","IXZIZ","IZXZI","ZIZXI","ZZIIY","XIIII","XXXIX","XIXII","XXIII","XIXXX"]}</script></figure>
+<script type="module">
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+document.querySelectorAll("[data-tcs]").forEach((root) => {
+	if (root.dataset.tcsBound) return;
+	root.dataset.tcsBound = "true";
+	const frames = JSON.parse(root.querySelector("[data-frames]").textContent);
+	const panels = [...root.querySelectorAll("[data-panel]")];
+	const dots = [...root.querySelectorAll("[data-goto]")];
+	const stageTitles = dots.map((dot) => dot.getAttribute("aria-label").replace(/^Step \d+: /, ""));
+	const previous = root.querySelector("[data-prev]");
+	const next = root.querySelector("[data-next]");
+	const count = root.querySelector("[data-count]");
+	const title = root.querySelector("[data-title]");
+	const sub = root.querySelector("[data-sub]");
+	const subGroups = [...root.querySelectorAll("[data-substeps]")];
+	const subDots = [...root.querySelectorAll("[data-subgoto]")];
+	let current = 0;
+	/* --- Pauli program ---------------------------------------------------- */
+	const body = root.querySelector("[data-program]").tBodies[0];
+	const rows = [...body.querySelectorAll("tr[data-op]")];
+	const divider = body.querySelector("[data-divider]");
+	const waitingLabel = divider.querySelector("[data-waiting]");
+	const readOrder = rows.map((_, op) => op);
+	let shown = [];
+	let trialChoice = -1;
+	function setWidth(row, k, peak) {
+		row.style.setProperty("--k", String(k ?? 0));
+		row.classList.toggle("is-peak", k !== null && k === peak);
+		row.querySelector("[data-k]").textContent = k === null ? "" : String(k);
+	}
+	/** Highlight one candidate's trial: its chain with trial widths, and the measurement. */
+	function showTrial(frame, choice) {
+		trialChoice = choice;
+		const candidates = frame.candidates ?? [];
+		const candidate = candidates[choice];
+		const pending = new Set(candidates.map((c) => c.measurement));
+		const chain = new Map(candidate ? candidate.chain.map((op, i) => [op, candidate.trial[i]]) : []);
+		rows.forEach((row, op) => {
+			const inTrial = chain.has(op);
+			row.classList.toggle("is-chain", inTrial);
+			row.classList.toggle("is-candidate", candidate?.measurement === op);
+			row.classList.toggle("is-pending", pending.has(op) && candidate?.measurement !== op);
+			if (frame.scheduled && !frame.scheduled.includes(op)) {
+				row.classList.toggle("is-trial", inTrial);
+				setWidth(row, inTrial ? chain.get(op) : null, candidate ? candidate.peak : -1);
+			}
+		});
+	}
+	function arrange(frame) {
+		const before = new Map([...rows, divider].map((row) => [row, row.getBoundingClientRect().top]));
+		const scheduling = frame.mode === "schedule";
+		const scheduled = scheduling ? frame.scheduled : readOrder;
+		const waiting = scheduling ? readOrder.filter((op) => !scheduled.includes(op)) : [];
+		scheduled.forEach((op) => body.append(rows[op]));
+		body.append(divider);
+		waiting.forEach((op) => body.append(rows[op]));
+		divider.hidden = !scheduling || waiting.length === 0;
+		waitingLabel.textContent = `waiting · ${waiting.length} operation${waiting.length === 1 ? "" : "s"}`;
+		const widths = scheduled.map((op) => Number(rows[op].dataset[scheduling ? "kScheduled" : "kRead"]));
+		const peak = widths.length ? Math.max(...widths) : 0;
+		rows.forEach((row) => row.classList.remove("is-chain", "is-candidate", "is-pending", "is-trial", "is-new"));
+		scheduled.forEach((op, position) => {
+			rows[op].classList.remove("is-waiting");
+			rows[op].classList.toggle("is-new", scheduling && shown.length < scheduled.length && !shown.includes(op));
+			setWidth(rows[op], widths[position], peak);
+		});
+		shown = scheduling ? scheduled : [];
+		waiting.forEach((op) => {
+			rows[op].classList.add("is-waiting");
+			setWidth(rows[op], null, peak);
+		});
+		if (frame.candidates) showTrial(frame, frame.candidates.findIndex((c) => c.chosen));
+		if (reduceMotion.matches) return;
+		[...rows, divider].forEach((row) => {
+			const shift = before.get(row) - row.getBoundingClientRect().top;
+			if (!shift || row.hidden) return;
+			row.animate([{ transform: `translateY(${shift}px)` }, { transform: "none" }], {
+				duration: 450,
+				easing: "cubic-bezier(0.2, 0.7, 0.2, 1)"
+			});
+		});
+	}
+	root.querySelectorAll("[data-frame-candidates]").forEach((group) => {
+		const frame = frames[Number(group.dataset.frameCandidates)];
+		const buttons = [...group.querySelectorAll("[data-candidate]")];
+		buttons.forEach((button, k) => button.addEventListener("click", () => {
+			buttons.forEach((other) => other.setAttribute("aria-pressed", String(other === button)));
+			closeTip();
+			showTrial(frame, k);
+		}));
+	});
+	/* --- Stabilizer tooltip ------------------------------------------------
+	* The generators before the row's operation, one aligned row each, with
+	* those that anticommute with the operation marked. */
+	const stabilizers = JSON.parse(root.querySelector("[data-stabilizers]").textContent);
+	const tip = root.querySelector("[data-stabilizer-tip]");
+	tip.id = `tcs-stabilizers-${crypto.randomUUID()}`;
+	let tipRow = null;
+	const anticommutes = (a, b) => [...a].filter((letter, q) => letter !== "I" && b[q] !== "I" && letter !== b[q]).length % 2 === 1;
+	/** Generators just before `op` in the current frame, or null if it is not placed. */
+	function stabilizersBefore(op) {
+		const frame = frames[current];
+		if (frame.mode === "read") return op ? stabilizers.read[op - 1] : stabilizers.initial;
+		const scheduled = frame.scheduled ?? [];
+		const position = scheduled.indexOf(op);
+		if (position >= 0) return position ? stabilizers.scheduled[position - 1] : stabilizers.initial;
+		const candidate = frame.candidates?.[trialChoice];
+		const step = candidate ? candidate.chain.indexOf(op) : -1;
+		if (!candidate || step < 0) return null;
+		if (step) return candidate.trial_stabilizers[step - 1];
+		return scheduled.length ? stabilizers.scheduled[scheduled.length - 1] : stabilizers.initial;
+	}
+	function tiles(pauli) {
+		return [...pauli].map((letter) => `<span class="tcs__p tcs__p--${letter}">${letter === "I" ? "·" : letter}</span>`).join("");
+	}
+	function renderTip(op) {
+		const before = stabilizersBefore(op);
+		if (!before) return "<p class=\"tcs__tip-note\">Not scheduled yet.</p>";
+		const pauli = stabilizers.paulis[op];
+		const rows = before.map((string) => `<div class="tcs__tip-row${anticommutes(pauli, string) ? " is-anti" : ""}">${tiles(string)}</div>`);
+		return `<p class="tcs__tip-section">Stabilizers before</p>${rows.join("") || "<p class=\"tcs__tip-note\">none</p>"}`;
+	}
+	/** Below (or above) the row, with the tooltip's tiles in the row's tile columns. */
+	function placeTip(row) {
+		const box = root.getBoundingClientRect();
+		const rowBox = row.getBoundingClientRect();
+		const height = tip.offsetHeight;
+		const below = rowBox.bottom - box.top + 4;
+		const above = rowBox.top - box.top - height - 4;
+		const fitsBelow = rowBox.bottom + height + 8 < window.innerHeight;
+		tip.style.top = `${fitsBelow || above < 0 ? below : above}px`;
+		tip.style.left = "0px";
+		const rowTile = row.querySelector(".tcs__p").getBoundingClientRect().left;
+		const tipTile = tip.querySelector(".tcs__p");
+		const offset = tipTile ? tipTile.getBoundingClientRect().left - tip.getBoundingClientRect().left : 12;
+		const left = Math.min(rowTile - box.left - offset, box.width - tip.offsetWidth - 4);
+		tip.style.left = `${Math.max(4, left)}px`;
+	}
+	function openTip(row) {
+		closeTip();
+		tipRow = row;
+		row.setAttribute("aria-describedby", tip.id);
+		tip.innerHTML = renderTip(Number(row.dataset.op));
+		tip.hidden = false;
+		placeTip(row);
+	}
+	function closeTip() {
+		tipRow?.removeAttribute("aria-describedby");
+		tipRow = null;
+		tip.hidden = true;
+	}
+	// NOTE: a tap focuses the row before its click; only keyboard focus opens the
+	// tooltip, so the click can toggle it without closing what focus opened.
+	let pointer = "";
+	root.addEventListener("pointerdown", (event) => pointer = event.pointerType);
+	root.addEventListener("keydown", () => pointer = "");
+	rows.forEach((row) => {
+		row.addEventListener("pointerenter", (event) => event.pointerType === "mouse" && openTip(row));
+		row.addEventListener("pointerleave", (event) => event.pointerType === "mouse" && closeTip());
+		row.addEventListener("focus", () => !pointer && openTip(row));
+		row.addEventListener("blur", closeTip);
+		row.addEventListener("click", () => {
+			if (pointer === "mouse") return;
+			if (tipRow === row) closeTip();
+			else openTip(row);
+		});
+	});
+	window.addEventListener("scroll", () => tipRow && placeTip(tipRow), { passive: true });
+	document.addEventListener("click", (event) => {
+		if (tipRow && !event.target.closest?.("tr[data-op]")) closeTip();
+	});
+	/* --- Navigation ------------------------------------------------------- */
+	function show(target) {
+		const focused = document.activeElement instanceof HTMLElement && root.contains(document.activeElement) ? document.activeElement : null;
+		closeTip();
+		current = Math.max(0, Math.min(frames.length - 1, target));
+		const frame = frames[current];
+		panels.forEach((element, index) => element.hidden = index !== frame.panel);
+		dots.forEach((dot, index) => index === frame.stage ? dot.setAttribute("aria-current", "step") : dot.removeAttribute("aria-current"));
+		// A step with parts shows them in place of its dot while it is current.
+		subGroups.forEach((group) => {
+			const open = Number(group.dataset.substeps) === frame.stage;
+			group.hidden = !open;
+			dots[Number(group.dataset.substeps)].hidden = open;
+		});
+		subDots.forEach((dot) => {
+			const index = Number(dot.dataset.subgoto);
+			if (index === current) dot.setAttribute("aria-current", "step");
+			else dot.removeAttribute("aria-current");
+			dot.classList.toggle("is-done", index < current);
+		});
+		previous.disabled = current === 0;
+		next.disabled = current === frames.length - 1;
+		count.textContent = `${frame.stage + 1} / ${dots.length}`;
+		title.textContent = stageTitles[frame.stage];
+		sub.textContent = frame.sub;
+		root.querySelectorAll("[data-frame-lead]").forEach((lead) => lead.hidden = Number(lead.dataset.frameLead) !== current);
+		root.querySelectorAll("[data-frame-candidates]").forEach((group) => {
+			group.hidden = Number(group.dataset.frameCandidates) !== current;
+			group.querySelectorAll("[data-candidate]").forEach((button) => button.setAttribute("aria-pressed", String(button.classList.contains("is-winner"))));
+		});
+		if (frame.mode) arrange(frame);
+		// Reordering rows can blur them, and stage changes can hide or disable
+		// the active control. Keep keyboard navigation inside the visible step.
+		if (focused) {
+			const fallback = subDots.find((dot) => Number(dot.dataset.subgoto) === current && !dot.closest("[hidden]")) ?? dots[frame.stage];
+			const destination = focused.closest("[hidden]") || focused.matches(":disabled") ? fallback : focused;
+			if (document.activeElement !== destination) destination.focus({ preventScroll: true });
+			else if (destination.matches("tr[data-op]") && !pointer) openTip(destination);
+		}
+	}
+	previous.addEventListener("click", () => show(current - 1));
+	next.addEventListener("click", () => show(current + 1));
+	dots.forEach((dot) => dot.addEventListener("click", () => show(Number(dot.dataset.goto))));
+	subDots.forEach((dot) => dot.addEventListener("click", () => show(Number(dot.dataset.subgoto))));
+	root.addEventListener("keydown", (event) => {
+		if (event.target.closest("pre, [data-zx], details")) return;
+		if (event.key === "Escape") closeTip();
+		else if (event.key === "ArrowRight") show(current + 1);
+		else if (event.key === "ArrowLeft") show(current - 1);
+	});
+});
+
+</script>
+<script>
+  // Report the page height to the notebook, which sizes the iframe to fit each step.
+  new ResizeObserver(() =>
+    parent.postMessage({ tcsHeight: document.documentElement.scrollHeight }, '*'),
+  ).observe(document.body);
+</script>
+</body>
+</html>
