@@ -10,6 +10,7 @@ circuits: every `S`/`S_DAG` swapped for `T`/`T_DAG`, as cliffordea's `swap_t_and
 - `d5a19_S_inject+cultivate_uncorrected.stim`: the S proxy, noiseless, without the
   Bell-growth feedforward.
 - `d5a19_T_inject+cultivate_uncorrected.stim`: its T-state circuit.
-- `d5a19_T_inject+cultivate_p1e-3.stim`: with the feedforward, noise p = 1e-3.
+- `d5a19_S_inject+cultivate_p1e-3.stim`: the S proxy with the feedforward, noise p = 1e-3.
+- `d5a19_T_inject+cultivate_p1e-3.stim`: its T-state circuit.
 - `d5a19f13_T_inject+cultivate_p1e-3.stim`: the same with 13 Z-flag qubits in the final
   double check, Chan et al.'s fix.
