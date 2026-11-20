@@ -5,7 +5,9 @@ Shots per second, compile time and active width K of 13 tsim-bench circuits
 and Magna (CPU, RTX 5090), with the paper's postselection on and off. Measured 2026-11-20.
 
 - `circuits.txt`: the circuits, as paths in tsim-bench.
-- `results_linux.json`: Ryzen 9 9900X (1 and 12 threads) and RTX 5090. Tsim ran under
+- `results_linux.json`: Ryzen 9 9900X (1 and 12 threads) and RTX 5090. Tsim ran under the pinned
+  tsim-bench corpus 19804f26 (its cells were re-measured after a first run had used a tsim-bench
+  checkout whose worker capped calls at 2^28 / row-length shots, undercounting the GPU), with
   `tsim-dev bench` (bloqade-tsim 1.1.0 at `feat/determined-measurements` 0e95b9a3, CUDA at
   `cuda-statevector-executor` d140f3d9); the other simulators with the harness in
   `~/sim-comparison/` on that machine (worker, runner, Magna converter, `results_full.json` with
