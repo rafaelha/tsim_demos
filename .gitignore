@@ -8,3 +8,15 @@ wheels/
 
 # Virtual environments
 .venv
+
+# OS / tooling
+.DS_Store
+.ipynb_checkpoints/
+*.pyspy
+
+# Local scratch
+star/
+circuits/tets.stim
+circuits/dets.dem
+demos/ppvm_demo.py
+demos/ppvm_stim_support.md
