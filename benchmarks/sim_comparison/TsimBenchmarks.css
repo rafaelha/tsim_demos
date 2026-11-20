@@ -1,0 +1,870 @@
+/*
+ * Tsim 1.0.0 release-post figures: TsimReleaseBenchmarks, TsimSimulatorComparison
+ * and TsimActiveWidthTable share this sheet, so their cards, toggles, rows and
+ * tooltips read as one set.
+ *
+ * Colour comes from the canonical `--viz-series-*` slots in brand.css, fixed
+ * per simulator (Tsim 1.0.0 = slot 1, Clifft = 2, SymFT = 3; Tsim 0.1.5 is the
+ * muted "before" ring). Everything else derives from the shared tokens, so
+ * light and dark flip automatically.
+ *
+ * Paragraph, list and link rules are scoped under `.tsb`: the blog wrapper's
+ * `.prose p` / `.prose ul` outrank a single class and would otherwise impose
+ * the prose rhythm on the figure chrome.
+ */
+.tsb {
+  --tsb-grid: color-mix(in srgb, var(--color-border) 80%, transparent);
+  --tsb-inset: 7px;
+
+  margin: 1.75rem 0 2rem;
+  padding: clamp(1rem, 3vw, 1.6rem);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  color: var(--color-fg);
+}
+
+/* Series slots: one place per slot, consumed by marks, legend and tooltip keys. */
+.tsb__s0 {
+  --tsb-color: var(--color-muted);
+}
+.tsb__s1 {
+  --tsb-color: var(--viz-series-1);
+}
+.tsb__s2 {
+  --tsb-color: var(--viz-series-2);
+}
+.tsb__s3 {
+  --tsb-color: var(--viz-series-3);
+}
+.tsb__s4 {
+  --tsb-color: var(--viz-series-4);
+}
+
+.tsb__sr {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- Caption -------------------------------------------------------------- */
+.tsb__caption {
+  margin-bottom: 0.9rem;
+}
+.tsb .tsb__eyebrow {
+  margin: 0 0 0.3rem;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tsb .tsb__title {
+  margin: 0 0 0.45rem;
+  font-size: clamp(1.15rem, 3vw, 1.4rem);
+  font-weight: 900;
+  line-height: 1.25;
+}
+.tsb .tsb__sub {
+  margin: 0;
+  max-width: 46rem;
+  color: var(--color-muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.tsb .tsb__sub + .tsb__sub {
+  margin-top: 0.45rem;
+}
+.tsb__sub strong {
+  color: var(--color-fg);
+}
+/* The caveat that has to travel with the plot, set a step quieter. */
+.tsb .tsb__sub--caveat {
+  margin-top: 0.6rem;
+  border-left: 2px solid var(--color-border);
+  padding-left: 0.6rem;
+  font-size: 0.78rem;
+}
+.tsb code {
+  font-size: 0.9em;
+}
+
+/* --- Legend --------------------------------------------------------------- */
+.tsb .tsb__legend {
+  display: flex;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.2rem;
+  list-style: none;
+}
+.tsb .tsb__legend-item {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  gap: 0.4rem;
+  color: var(--color-fg);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+/* Comparison legend: each entry shows or hides its simulator. */
+.tsb .tsb__legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.1rem 0.35rem;
+  margin: -0.1rem -0.35rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.tsb .tsb__legend-toggle:hover {
+  background: var(--color-surface-hover);
+}
+.tsb .tsb__legend-toggle[aria-pressed='false'] {
+  opacity: 0.45;
+}
+.tsb .tsb__legend-toggle[aria-pressed='false'] span {
+  text-decoration: line-through;
+}
+.tsb__glyph {
+  width: 0.8rem;
+  height: 0.8rem;
+  flex: none;
+  overflow: visible;
+}
+.tsb__glyph path,
+.tsb__mark path {
+  fill: var(--tsb-color);
+  stroke: var(--color-surface);
+  stroke-width: 1.5;
+}
+/* Tsim 0.1.5: hollow, so "before" never rests on the grey alone. */
+.tsb__ring path {
+  fill: var(--color-surface);
+  stroke: var(--tsb-color);
+  stroke-width: 2;
+}
+
+/* --- Segmented toggles ----------------------------------------------------- */
+.tsb__controls {
+  display: flex;
+  margin: 0 0 0.85rem;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.1rem;
+}
+.tsb__control {
+  display: grid;
+  gap: 0.3rem;
+  justify-items: start;
+}
+.tsb__control-label {
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tsb__segments {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-bg);
+}
+.tsb__segments button {
+  padding: 0.32rem 0.75rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+}
+.tsb__segments button:hover {
+  color: var(--brand-strong);
+}
+.tsb__segments button[aria-pressed='true'] {
+  background: var(--brand-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 40%, transparent);
+  color: var(--brand-strong);
+}
+.tsb__segments button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+/* What the axis currently shows; doubles as the plot's running caption. */
+.tsb .tsb__note {
+  margin: 0 0 0.35rem;
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+/* --- Row chart -------------------------------------------------------------
+ * One row per circuit on a shared, decade-aligned log axis. Decades are evenly
+ * spaced, so the grid is one repeating gradient sized by `--decades`, inset by
+ * `--tsb-inset` so a mark at either end of the axis is never clipped. */
+.tsb__chart {
+  --decades: 4;
+}
+.tsb__head,
+.tsb__row {
+  display: grid;
+  align-items: center;
+  column-gap: 0.65rem;
+  grid-template-areas: 'name plot value';
+  grid-template-columns: 11rem minmax(0, 1fr) 8.8rem;
+}
+.tsb--compare .tsb__head,
+.tsb--compare .tsb__row {
+  grid-template-areas: 'name k plot value';
+  grid-template-columns: 11rem 1.5rem minmax(0, 1fr) 4.4rem;
+}
+.tsb__head {
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.tsb__head-name {
+  grid-area: name;
+}
+.tsb__head-k {
+  grid-area: k;
+  text-align: right;
+}
+.tsb__head-unit {
+  grid-area: value;
+  text-align: right;
+}
+.tsb__ticks {
+  position: relative;
+  grid-area: plot;
+  height: 1.1rem;
+  margin-inline: var(--tsb-inset);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+.tsb__tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.tsb__tick:first-child {
+  transform: translateX(calc(-1 * var(--tsb-inset)));
+}
+.tsb__tick:last-child {
+  transform: translateX(calc(-100% + var(--tsb-inset)));
+}
+
+.tsb__row {
+  border-bottom: 1px solid var(--color-border);
+}
+.tsb__name {
+  display: grid;
+  grid-area: name;
+  min-width: 0;
+  padding: 0.5rem 0;
+  gap: 0.1rem;
+}
+.tsb .tsb__name a,
+.tsb__name-text {
+  color: var(--color-fg);
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-decoration-color: color-mix(in srgb, var(--brand) 55%, transparent);
+  text-underline-offset: 3px;
+}
+.tsb .tsb__name a:hover {
+  color: var(--brand-strong);
+}
+.tsb .tsb__name a:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.tsb__meta {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+.tsb__tag {
+  margin-left: 0.35rem;
+  padding: 0 0.35rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.tsb__tag[hidden] {
+  display: none;
+}
+
+.tsb__plot {
+  display: grid;
+  position: relative;
+  grid-area: plot;
+  align-content: center;
+  align-self: stretch;
+  padding: 0.55rem 0;
+  gap: 3px;
+  border-radius: 4px;
+  background-image: linear-gradient(to right, var(--tsb-grid) 1px, transparent 1px);
+  background-position: var(--tsb-inset) 0;
+  background-repeat: repeat-x;
+  background-size: calc((100% - 2 * var(--tsb-inset)) / var(--decades)) 100%;
+  cursor: default;
+}
+.tsb__plot.is-active {
+  background-color: var(--color-surface-hover);
+}
+.tsb__plot:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+/* Relative view: the 1× reference is the left edge, drawn a step stronger. */
+.tsb--compare[data-view='relative'] .tsb__plot::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--tsb-inset);
+  width: 1px;
+  background: color-mix(in srgb, var(--color-muted) 70%, transparent);
+  content: '';
+}
+
+.tsb__lane {
+  position: relative;
+  height: 15px;
+  margin-inline: var(--tsb-inset);
+}
+.tsb__stem {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: var(--x);
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--tsb-color) 50%, transparent);
+}
+.tsb__mark {
+  position: absolute;
+  top: 50%;
+  left: var(--x);
+  width: 12px;
+  height: 12px;
+  overflow: visible;
+  transform: translate(-50%, -50%);
+}
+.tsb__lane:not([data-kind='ok']) .tsb__stem,
+.tsb__lane:not([data-kind='ok']) .tsb__mark {
+  display: none;
+}
+.tsb__row[hidden],
+.tsb--compare[data-metric='compile'] [data-sampling-only],
+.tsb--bars[data-metric='compile'] [data-sampling-only] {
+  display: none;
+}
+.tsb__lane[hidden],
+.tsb__ks [hidden],
+.tsb__values [hidden] {
+  display: none;
+}
+.tsb .tsb__more {
+  margin: 0.6rem 0 0;
+  padding: 0.35rem 0;
+  border: 0;
+  background: none;
+  color: var(--brand-strong);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+.tsb .tsb__more:hover {
+  text-decoration: underline;
+}
+.tsb .tsb__more:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Compare: the stem spans baseline → target and the open mark is the baseline. */
+.tsb__lane .tsb__mark--base {
+  left: var(--from);
+}
+.tsb__lane:not([data-compare]) .tsb__mark--base {
+  display: none;
+}
+.tsb__lane[data-compare] .tsb__stem {
+  left: min(var(--from), var(--x));
+  width: calc(max(var(--from), var(--x)) - min(var(--from), var(--x)));
+}
+
+/* K column and value column: one line per lane, aligned with the lanes. */
+.tsb__ks,
+.tsb__values {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.tsb__ks {
+  grid-area: k;
+  color: var(--color-muted);
+}
+.tsb__values {
+  grid-area: value;
+  color: var(--color-muted);
+}
+.tsb__ks span,
+.tsb__values span {
+  height: 15px;
+  line-height: 15px;
+  white-space: nowrap;
+}
+/* The fastest engine in a row carries the ink; the rest stay secondary. */
+.tsb__values .is-best {
+  color: var(--color-fg);
+  font-weight: 900;
+}
+.tsb__values [data-kind='pending'],
+.tsb__values [data-kind='na'],
+.tsb__readout [data-kind='pending'],
+.tsb__readout [data-kind='na'] {
+  font-style: italic;
+}
+
+/* --- Lanes on one circuit (TsimStimComparison) --------------------------------
+ * The comparison's line-and-mark lanes, one row per simulator. Stim's line is
+ * dashed: it samples a Clifford proxy, not the measured circuit. */
+.tsb--bars .tsb__head,
+.tsb--bars .tsb__row {
+  grid-template-columns: 13.5rem minmax(0, 1fr) 4.4rem;
+}
+.tsb--bars .tsb__note-title {
+  margin-right: 0.45rem;
+  color: var(--color-fg);
+  font-weight: 700;
+  text-decoration-color: color-mix(in srgb, var(--brand) 55%, transparent);
+  text-underline-offset: 3px;
+}
+.tsb--bars a.tsb__note-title:hover {
+  color: var(--brand-strong);
+}
+.tsb--bars a.tsb__note-title:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.tsb__name-engine {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+/* A simulator that cannot run the setting keeps its row, labelled in the lane. */
+.tsb__lane-note {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-style: italic;
+  white-space: nowrap;
+}
+.tsb__lane:not([data-kind='na']) .tsb__lane-note {
+  display: none;
+}
+.tsb__stem--proxy {
+  background: repeating-linear-gradient(
+    to right,
+    color-mix(in srgb, var(--tsb-color) 70%, transparent) 0 5px,
+    transparent 5px 9px
+  );
+}
+
+/* --- Release dumbbells ----------------------------------------------------- */
+.tsb__lane--dumbbell {
+  height: 22px;
+}
+.tsb__span {
+  position: absolute;
+  top: 50%;
+  left: var(--from);
+  width: calc(var(--to) - var(--from));
+  height: 2px;
+  margin-top: -1px;
+  background: color-mix(in srgb, var(--viz-series-1) 55%, transparent);
+}
+.tsb__lane--dumbbell .tsb__mark {
+  width: 14px;
+  height: 14px;
+}
+.tsb__readout {
+  display: grid;
+  grid-area: value;
+  justify-items: end;
+  padding: 0.45rem 0;
+  gap: 0.05rem;
+  text-align: right;
+}
+.tsb__speedup {
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.tsb__speedup[data-kind='pending'],
+.tsb__speedup[data-kind='na'] {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+.tsb__speedup-note,
+.tsb__from-to {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.tsb__panel[hidden] {
+  display: none;
+}
+
+/* --- Tooltip -------------------------------------------------------------- */
+.tsb__tip {
+  position: fixed;
+  z-index: 60;
+  width: max-content;
+  max-width: min(23rem, calc(100vw - 1rem));
+  padding: 0.6rem 0.75rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+  box-shadow: 0 16px 36px -18px rgb(0 0 0 / 55%);
+  color: var(--color-fg);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  pointer-events: none;
+}
+.tsb__tip[hidden] {
+  display: none;
+}
+.tsb .tsb__tip p {
+  margin: 0;
+}
+.tsb .tsb__tip-title {
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+.tsb .tsb__tip-meta {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+.tsb__tip-item {
+  margin-top: 0.45rem;
+}
+.tsb__tip-head {
+  display: grid;
+  align-items: center;
+  gap: 0.45rem;
+  grid-template-columns: 0.8rem minmax(0, 1fr) auto;
+}
+.tsb__tip-name {
+  color: var(--color-muted);
+  font-weight: 700;
+}
+/* Values lead in the tooltip: the reader has the series, wants the number. */
+.tsb__tip-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
+.tsb .tsb__tip-notes {
+  padding-left: 1.25rem;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+.tsb .tsb__tip-foot {
+  margin-top: 0.45rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.35rem;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+
+/* --- Disclosures + tables -------------------------------------------------- */
+.tsb__details,
+.tsb__table {
+  margin-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+}
+.tsb__table {
+  margin-top: 0.75rem;
+}
+.tsb__details > summary,
+.tsb__table > summary {
+  color: var(--brand-strong);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.tsb__details > summary:focus-visible,
+.tsb__table > summary:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.tsb__specs {
+  display: grid;
+  margin: 0.85rem 0 0;
+  gap: 0.1rem 1rem;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+.tsb__specs dt {
+  color: var(--color-fg);
+  font-weight: 700;
+}
+.tsb__specs dd {
+  margin: 0 0 0.5rem;
+  color: var(--color-muted);
+}
+.tsb__scroll {
+  overflow-x: auto;
+}
+.tsb table {
+  width: 100%;
+  margin: 0.85rem 0 0;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+.tsb caption {
+  margin-bottom: 0.3rem;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: left;
+}
+.tsb th,
+.tsb td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.3rem 0.45rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.tsb thead th {
+  color: var(--color-muted);
+  font-weight: 700;
+  vertical-align: bottom;
+}
+.tsb tbody th {
+  color: var(--color-fg);
+  text-align: left;
+}
+.tsb th[scope='colgroup'] {
+  text-align: center;
+}
+.tsb td[data-kind='na'],
+.tsb td[data-kind='pending'] {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+/* --- K table ---------------------------------------------------------------- */
+.tsb--width table {
+  margin-top: 0;
+  font-size: 0.84rem;
+}
+.tsb--width thead th {
+  white-space: nowrap;
+}
+.tsb--width thead th:first-child {
+  text-align: left;
+}
+/* "Active width K" spans the three engine columns. */
+.tsb .tsb__group-row td {
+  border-bottom: 0;
+}
+.tsb .tsb__group-row th {
+  padding-bottom: 0.15rem;
+  color: var(--color-fg);
+  text-align: center;
+}
+.tsb__th-engine {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.tsb__k {
+  display: inline-block;
+  min-width: 2.2rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 6px;
+  text-align: center;
+}
+.tsb__k--none {
+  color: var(--color-muted);
+}
+/* The lowest K per row is bold. */
+.tsb__k--lowest {
+  color: var(--color-fg);
+  font-weight: 900;
+}
+.tsb .tsb__empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.84rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tsb__mark {
+    transition: left 0.3s ease;
+  }
+  .tsb__stem {
+    transition:
+      left 0.3s ease,
+      width 0.3s ease;
+  }
+}
+
+/* Touch: segment buttons, legend toggles and disclosure summaries reach the 44px
+ * minimum, and circuit links grow their hit box without moving a glyph (block
+ * padding cancelled by an equal negative margin). Same break the other blog
+ * figures use. */
+@media (max-width: 50rem) {
+  .tsb__segments button {
+    min-height: 2.75rem;
+    padding-inline: 0.9rem;
+  }
+  .tsb .tsb__legend {
+    row-gap: 0;
+  }
+  .tsb .tsb__legend-toggle {
+    min-height: 2.75rem;
+    margin-block: 0;
+  }
+  .tsb__details > summary,
+  .tsb__table > summary {
+    min-height: 2.75rem;
+    padding: 0.75rem 0;
+  }
+  .tsb .tsb__name a,
+  .tsb--width tbody th a {
+    display: inline-block;
+    margin-block: -0.85rem;
+    padding-block: 0.85rem;
+  }
+}
+
+/* Narrow cards: the circuit name takes its own line above the plot, so the axis
+ * keeps most of the width. Keyed to the chart's own width (a container query on
+ * `.tsb__chart`, not on `.tsb`: layout containment there would turn the card into
+ * the fixed-position tooltip's containing block). Every other tick label drops
+ * wherever the plot column gets too narrow for all of them. */
+.tsb__chart {
+  container-type: inline-size;
+}
+@container (max-width: 34rem) {
+  .tsb__head,
+  .tsb__row {
+    grid-template-areas:
+      'name name'
+      'plot value';
+    grid-template-columns: minmax(0, 1fr) 7rem;
+  }
+  .tsb__speedup {
+    font-size: 1.05rem;
+  }
+  .tsb--compare .tsb__head,
+  .tsb--compare .tsb__row {
+    grid-template-areas:
+      'name name name'
+      'k plot value';
+    grid-template-columns: 1.3rem minmax(0, 1fr) 4rem;
+    column-gap: 0.45rem;
+  }
+  .tsb--bars .tsb__head,
+  .tsb--bars .tsb__row {
+    grid-template-columns: minmax(0, 1fr) 4rem;
+  }
+  .tsb__head-name {
+    display: none;
+  }
+  .tsb__name {
+    padding-bottom: 0;
+  }
+  .tsb__plot {
+    padding-top: 0.35rem;
+  }
+}
+@container (max-width: 30rem) {
+  .tsb__tick--minor {
+    display: none;
+  }
+}
+@container (min-width: 34rem) and (max-width: 42rem) {
+  .tsb__tick--minor {
+    display: none;
+  }
+}
+
+/* Phones: small text steps up to the 12px floor. */
+@media (max-width: 40rem) {
+  .tsb .tsb__eyebrow,
+  .tsb code,
+  .tsb__head,
+  .tsb__meta,
+  .tsb__ks,
+  .tsb__values,
+  .tsb__speedup-note,
+  .tsb__from-to,
+  .tsb__control-label,
+  .tsb .tsb__tip-meta,
+  .tsb .tsb__tip-notes,
+  .tsb .tsb__tip-foot,
+  .tsb table,
+  .tsb caption {
+    font-size: 0.75rem;
+  }
+  .tsb__specs {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .tsb__specs dt {
+    margin-top: 0.5rem;
+  }
+  /* The K table keeps all five columns on a phone: engine names wrap under
+   * their marker instead of pushing the last column into a scroller. */
+  .tsb--width thead th {
+    white-space: normal;
+  }
+  .tsb__th-engine {
+    display: inline-grid;
+    justify-items: end;
+    gap: 0.15rem;
+  }
+  .tsb--width th,
+  .tsb--width td {
+    padding-inline: 0.3rem;
+  }
+}

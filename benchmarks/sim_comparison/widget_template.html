@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+/* Light-mode tokens of bloqade-website's src/styles/brand.css */
+:root {
+  --color-bg: #ffffff; --color-fg: #1a1b22; --color-muted: #55596b; --color-border: #e6e6ef;
+  --color-surface: #f7f7fb; --color-surface-hover: #f0eefb;
+  --brand: #6437ff; --brand-strong: #4f27d6; --brand-soft: #efeaff; --on-brand: #ffffff;
+  --viz-series-1: #6437ff; --viz-series-2: #eb6834; --viz-series-3: #1baf7a;
+  --viz-series-4: #eda100; --viz-series-5: #d81b7a;
+}
+html, body { margin: 0; background: #ffffff; }
+body {
+  padding: 4px;
+  font-family: 'Lato', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--color-fg);
+}
+/* bloqade-website src/components/TsimBenchmarks.css */
+/*__CSS__*/
+/* Additions for this widget */
+.tsb { margin: 0; }
+.tsb__control[hidden] { display: none; }
+.tsb__s5 { --tsb-color: var(--viz-series-5); }
+.tsb--compare .tsb__head, .tsb--compare .tsb__row {
+  grid-template-columns: 13rem 1.6rem minmax(0, 1fr) 4.6rem;
+}
+.tsb__lane-note { left: 0; }
+.tsb__glyph path, .tsb__mark path { fill: var(--tsb-color); }
+</style>
+</head>
+<body>
+<figure class="tsb tsb--compare" data-sim data-metric="sampling">
+  <div class="tsb__controls">
+    <div class="tsb__control">
+      <span class="tsb__control-label">Simulators</span>
+      <div class="tsb__segments" role="group" data-setting="mode">
+        <button type="button" data-value="all" aria-pressed="true">All</button>
+        <button type="button" data-value="tsim" aria-pressed="false">Tsim devices</button>
+      </div>
+    </div>
+    <div class="tsb__control">
+      <span class="tsb__control-label">Measure</span>
+      <div class="tsb__segments" role="group" data-setting="metric">
+        <button type="button" data-value="sampling" aria-pressed="true">Sampling</button>
+        <button type="button" data-value="compile" aria-pressed="false">Compilation</button>
+      </div>
+    </div>
+    <div class="tsb__control" data-sampling-control>
+      <span class="tsb__control-label">Postselection</span>
+      <div class="tsb__segments" role="group" data-setting="post">
+        <button type="button" data-value="on" aria-pressed="true">On</button>
+        <button type="button" data-value="off" aria-pressed="false">Off</button>
+      </div>
+    </div>
+    <div class="tsb__control" data-threads-control>
+      <span class="tsb__control-label">CPU threads</span>
+      <div class="tsb__segments" role="group" data-setting="threads">
+        <button type="button" data-value="1t" aria-pressed="true">1</button>
+        <button type="button" data-value="mt" aria-pressed="false">__CORES__</button>
+      </div>
+    </div>
+  </div>
+  <ul class="tsb__legend" data-legend aria-label="Simulators shown; click to show or hide"></ul>
+  <div class="tsb__chart" data-chart data-tip-group>
+    <div class="tsb__head" aria-hidden="true">
+      <span class="tsb__head-name">Circuit</span>
+      <span class="tsb__head-k" title="K: most qubits in a dense statevector at once">K</span>
+      <div class="tsb__ticks" data-ticks></div>
+      <span class="tsb__head-unit" data-unit></span>
+    </div>
+    <div data-rows></div>
+  </div>
+  <div class="tsb__tip" data-tip-host aria-hidden="true" hidden></div>
+  <details class="tsb__details">
+    <summary>Run details</summary>
+    <dl class="tsb__specs" data-specs></dl>
+  </details>
+</figure>
+<script type="application/json" data-model>/*__DATA__*/</script>
+<script>
+(() => {
+  const root = document.querySelector('[data-sim]');
+  const data = JSON.parse(document.querySelector('[data-model]').textContent);
+  const state = { mode: 'all', metric: 'sampling', threads: '1t', post: 'on' };
+  const hidden = new Set();
+
+  const MARKERS = {
+    square: 'M-3.6 -3.6h7.2v7.2h-7.2Z',
+    triangle: 'M0 -4.9L4.5 3.2L-4.5 3.2Z',
+    diamond: 'M0 -5L4.7 0L0 5L-4.7 0Z',
+    cross: 'M-5.4 -2.4h3v-3h4.8v3h3v4.8h-3v3h-4.8v-3h-3Z',
+    circle: 'M-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0Z',
+  };
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const glyph = (engine, className = 'tsb__glyph') => {
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('class', className);
+    svg.setAttribute('viewBox', '-6 -6 12 12');
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', MARKERS[engine.shape]);
+    svg.append(path);
+    return svg;
+  };
+  const el = (tag, className, text) => {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  };
+
+  const sig = (v) => Number(v.toPrecision(3));
+  const rate = (v) => v >= 1e9 ? `${sig(v / 1e9)} B` : v >= 1e6 ? `${sig(v / 1e6)} M` : v >= 1e3 ? `${sig(v / 1e3)} k` : `${sig(v)}`;
+  const secs = (v) => v >= 1 ? `${sig(v)} s` : `${sig(v * 1e3)} ms`;
+  const fmt = (metric, v) => metric === 'sampling' ? rate(v) : secs(v);
+
+  /** The engines shown in the current mode, each with the result config it reads. */
+  const engines = () => data.modes[state.mode].map((id) => data.engines[id]);
+  const configOf = (engine) => engine.configs[engine.configs.length === 1 ? 0 : state.threads === '1t' ? 0 : 1];
+  const key = (config, post = state.post) => (post === 'off' ? `${config}|post-off` : config);
+  const cell = (circuit, engine, config = configOf(engine), post = state.post) => (data.cells[circuit.id] || {})[key(config, post)];
+  const value = (c) => (!c || c.error ? null : state.metric === 'sampling' ? c.shots_per_s : c.compile_s);
+
+  /* One axis per mode and metric, covering both thread settings, so a toggle moves marks, not the scale. */
+  function axis() {
+    const values = [];
+    data.circuits.forEach((circuit) =>
+      engines().forEach((engine) =>
+        engine.configs.forEach((config) =>
+          ['on', 'off'].forEach((post) => {
+            const c = cell(circuit, engine, config, post);
+            const v = !c || c.error ? null : state.metric === 'sampling' ? c.shots_per_s : c.compile_s;
+            if (v && v > 0) values.push(v);
+          }),
+        ),
+      ),
+    );
+    let lo = Math.floor(Math.log10(Math.min(...values)));
+    let hi = Math.ceil(Math.log10(Math.max(...values)));
+    if (hi - lo < 1) hi = lo + 1;
+    return { lo, hi };
+  }
+  const position = (v, ax) => ((Math.log10(v) - ax.lo) / (ax.hi - ax.lo)) * 100;
+
+  function shortError(error) {
+    if (/timeout/i.test(error)) return 'timeout';
+    if (/memory|OOM/i.test(error)) return 'out of memory';
+    if (/k_max|active width|active qubits|too wide|> ?11|limit/i.test(error)) return 'too wide';
+    if (/rotation/i.test(error)) return 'no rotations';
+    if (/unsupported/i.test(error)) return 'unsupported';
+    if (/setup/i.test(error)) return 'not installed';
+    return 'error';
+  }
+
+  function legend() {
+    const host = root.querySelector('[data-legend]');
+    host.replaceChildren(
+      ...engines().map((engine) => {
+        const item = el('li', `tsb__legend-item tsb__s${engine.slot}`);
+        const button = el('button', 'tsb__legend-toggle');
+        button.type = 'button';
+        button.setAttribute('aria-pressed', String(!hidden.has(engine.id)));
+        button.append(glyph(engine), el('span', '', engine.label));
+        button.addEventListener('click', () => {
+          if (hidden.has(engine.id)) hidden.delete(engine.id);
+          else if (engines().filter((e) => !hidden.has(e.id)).length > 1) hidden.add(engine.id);
+          render();
+        });
+        item.append(button);
+        return item;
+      }),
+    );
+  }
+
+  function render() {
+    const shown = engines().filter((engine) => !hidden.has(engine.id));
+    const ax = axis();
+    root.dataset.metric = state.metric;
+    root.querySelector('[data-threads-control]').hidden = state.metric === 'compile';
+    root.querySelector('[data-sampling-control]').hidden = state.metric === 'compile';
+    root.querySelectorAll('[data-setting]').forEach((group) =>
+      group.querySelectorAll('button').forEach((button) =>
+        button.setAttribute('aria-pressed', String(button.dataset.value === state[group.dataset.setting])),
+      ),
+    );
+    legend();
+
+    const chart = root.querySelector('[data-chart]');
+    chart.style.setProperty('--decades', String(ax.hi - ax.lo));
+    root.querySelector('[data-unit]').textContent = state.metric === 'sampling' ? 'shots/s' : 'compile';
+    const ticks = [];
+    for (let d = ax.lo; d <= ax.hi; d++) {
+      const tick = el('span', 'tsb__tick', state.metric === 'sampling' ? rate(10 ** d).replace(' ', '') : secs(10 ** d));
+      tick.style.left = `${position(10 ** d, ax)}%`;
+      ticks.push(tick);
+    }
+    root.querySelector('[data-ticks]').replaceChildren(...ticks);
+
+    const rows = data.circuits.map((circuit) => {
+      const readings = shown.map((engine) => ({ engine, c: cell(circuit, engine) }));
+      const values = readings.map(({ c }) => value(c)).filter((v) => v !== null);
+      const best = values.length ? (state.metric === 'sampling' ? Math.max(...values) : Math.min(...values)) : null;
+      const base = state.mode === 'tsim' ? value(cell(circuit, data.engines['tsim-1t'])) : null;
+
+      const row = el('div', 'tsb__row');
+      const name = el('div', 'tsb__name');
+      const link = el('a', '', circuit.label);
+      link.href = circuit.url;
+      link.target = '_blank';
+      name.append(link, el('span', 'tsb__meta', circuit.meta));
+      const ks = el('div', 'tsb__ks');
+      const plot = el('div', 'tsb__plot');
+      const vals = el('div', 'tsb__values');
+      const tip = { title: circuit.label, meta: [circuit.meta, circuit.paper], items: [] };
+
+      readings.forEach(({ engine, c }) => {
+        const v = value(c);
+        const k = c && !c.error && c.k_max !== null && c.k_max !== undefined ? String(c.k_max) : '';
+        const kSpan = el('span', '', k);
+        if (c && c.k_name) kSpan.title = c.k_name;
+        ks.append(kSpan);
+
+        const lane = el('div', `tsb__lane tsb__s${engine.slot}`);
+        lane.dataset.kind = v === null ? 'na' : 'ok';
+        if (v !== null) {
+          lane.style.setProperty('--x', `${position(v, ax)}%`);
+          lane.append(el('span', 'tsb__stem'), glyph(engine, 'tsb__mark'));
+        } else {
+          lane.append(el('span', 'tsb__lane-note', c ? shortError(c.error || '') : 'not run'));
+        }
+        plot.append(lane);
+
+        const text = v === null ? '–' : fmt(state.metric, v);
+        const span = el('span', v !== null && v === best ? 'is-best' : '', text);
+        span.dataset.kind = v === null ? 'na' : 'ok';
+        vals.append(span);
+
+        const notes = [];
+        if (c && !c.error) {
+          if (state.metric === 'sampling') notes.push(`compile ${secs(c.compile_s)}`);
+          else notes.push(`${rate(c.shots_per_s)} shots/s`);
+          if (k) notes.push(`${c.k_name || 'K'} = ${k}`);
+          if (state.metric === 'sampling' && typeof c.kept === 'number' && state.post === 'on') notes.push(`${sig(c.kept * 100)}% kept`);
+          if (c.post_note) notes.push(c.post_note);
+          if (c.note) notes.push(c.note);
+          if (c.threads) notes.push(`${c.threads} thread${c.threads === 1 ? '' : 's'}`);
+          if (base && v && state.metric === 'sampling' && engine.id !== 'tsim-1t') notes.push(`${sig(v / base)}× Tsim CPU, 1 thread`);
+          if (c.suspect) notes.push('suspect: detection rate differs from Tsim');
+        } else if (c && c.error) {
+          notes.push(c.error);
+        }
+        tip.items.push({ engine, value: text, notes });
+      });
+      plot.dataset.tip = JSON.stringify(tip);
+      row.append(name, ks, plot, vals);
+      return row;
+    });
+    root.querySelector('[data-rows]').replaceChildren(...rows);
+  }
+
+  /* --- Tooltip, as bindTips in bloqade-website's src/lib/tsim-bench.ts --- */
+  const host = root.querySelector('[data-tip-host]');
+  let current = null;
+  let pointerX = null;
+  function showTip(target) {
+    const tip = JSON.parse(target.dataset.tip);
+    current?.classList.remove('is-active');
+    current = target;
+    target.classList.add('is-active');
+    host.replaceChildren(
+      el('p', 'tsb__tip-title', tip.title),
+      ...tip.meta.map((line) => el('p', 'tsb__tip-meta', line)),
+      ...tip.items.map((item) => {
+        const box = el('div', `tsb__tip-item tsb__s${item.engine.slot}`);
+        const head = el('div', 'tsb__tip-head');
+        head.append(glyph(item.engine), el('span', 'tsb__tip-name', item.engine.label), el('strong', 'tsb__tip-value', item.value));
+        box.append(head);
+        if (item.notes.length) box.append(el('p', 'tsb__tip-notes', item.notes.join(' · ')));
+        return box;
+      }),
+    );
+    host.hidden = false;
+    const r = target.getBoundingClientRect();
+    const t = host.getBoundingClientRect();
+    const left = Math.max(8, Math.min((pointerX ?? r.left + 120) - t.width / 2, window.innerWidth - t.width - 8));
+    const above = r.top - t.height - 8;
+    const top = above >= 8 ? above : Math.min(r.bottom + 8, window.innerHeight - t.height - 8);
+    host.style.left = `${Math.round(left)}px`;
+    host.style.top = `${Math.round(Math.max(8, top))}px`;
+  }
+  root.addEventListener('pointermove', (event) => {
+    const target = event.target.closest('[data-tip]');
+    pointerX = event.clientX;
+    if (target && target !== current) showTip(target);
+    if (!target && current) { current.classList.remove('is-active'); current = null; host.hidden = true; }
+  });
+  root.addEventListener('pointerleave', () => { current?.classList.remove('is-active'); current = null; host.hidden = true; });
+
+  root.querySelectorAll('[data-setting]').forEach((group) =>
+    group.querySelectorAll('button').forEach((button) =>
+      button.addEventListener('click', () => {
+        state[group.dataset.setting] = button.dataset.value;
+        render();
+      }),
+    ),
+  );
+
+  root.querySelector('[data-specs]').replaceChildren(
+    ...data.specs.flatMap(([term, text]) => [el('dt', '', term), el('dd', '', text)]),
+  );
+  render();
+
+  new ResizeObserver(() => parent.postMessage({ tsbHeight: document.documentElement.scrollHeight }, '*')).observe(document.body);
+})();
+</script>
+</body>
+</html>

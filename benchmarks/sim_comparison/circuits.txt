@@ -1,0 +1,13 @@
+papers/2406.17653_transversal_algorithmic_ft/stim/s_injection_T_d5_p0.001_pinj0.1.stim
+papers/2409.17595_magic_state_cultivation/stim/inject_cultivate_d3_p0.001.stim
+papers/2409.17595_magic_state_cultivation/stim/inject_cultivate_d5_p0.001.stim
+papers/2409.17595_magic_state_cultivation/stim/end2end_d5_dsurface15_p0.001.stim
+papers/2509.05212_fold_transversal_cultivation/stim/fold-d5_native_T_p0.001.stim
+papers/2503.18657_rp2_cultivation/stim/rp_3_rp_5_T_cult.stim
+papers/2505.13587_correlated_decoding_distillation/stim/distillation_15to1_T_d5_p0.001.stim
+papers/2610.06811_merlin/stim/distillation_bh10_p0.001.stim
+papers/2610.22315_magna/stim/bh100-T.stim
+papers/2610.06811_merlin/stim/code_switching_bt27_p0.001.stim
+papers/2610.06811_merlin/stim/code_switching_bt81_p0.001.stim
+papers/2607.28600_symft/stim/coherent_surface_d5_r5_p1e-3_rz0p02.stim
+papers/2509.18294_transversal_star/stim/star_d=9.stim

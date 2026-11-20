@@ -1,0 +1,1188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+/* Light-mode tokens of bloqade-website's src/styles/brand.css */
+:root {
+  --color-bg: #ffffff; --color-fg: #1a1b22; --color-muted: #55596b; --color-border: #e6e6ef;
+  --color-surface: #f7f7fb; --color-surface-hover: #f0eefb;
+  --brand: #6437ff; --brand-strong: #4f27d6; --brand-soft: #efeaff; --on-brand: #ffffff;
+  --viz-series-1: #6437ff; --viz-series-2: #eb6834; --viz-series-3: #1baf7a;
+  --viz-series-4: #eda100; --viz-series-5: #d81b7a;
+}
+html, body { margin: 0; background: #ffffff; }
+body {
+  padding: 4px;
+  font-family: 'Lato', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--color-fg);
+}
+/* bloqade-website src/components/TsimBenchmarks.css */
+/*
+ * Tsim 1.0.0 release-post figures: TsimReleaseBenchmarks, TsimSimulatorComparison
+ * and TsimActiveWidthTable share this sheet, so their cards, toggles, rows and
+ * tooltips read as one set.
+ *
+ * Colour comes from the canonical `--viz-series-*` slots in brand.css, fixed
+ * per simulator (Tsim 1.0.0 = slot 1, Clifft = 2, SymFT = 3; Tsim 0.1.5 is the
+ * muted "before" ring). Everything else derives from the shared tokens, so
+ * light and dark flip automatically.
+ *
+ * Paragraph, list and link rules are scoped under `.tsb`: the blog wrapper's
+ * `.prose p` / `.prose ul` outrank a single class and would otherwise impose
+ * the prose rhythm on the figure chrome.
+ */
+.tsb {
+  --tsb-grid: color-mix(in srgb, var(--color-border) 80%, transparent);
+  --tsb-inset: 7px;
+
+  margin: 1.75rem 0 2rem;
+  padding: clamp(1rem, 3vw, 1.6rem);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  color: var(--color-fg);
+}
+
+/* Series slots: one place per slot, consumed by marks, legend and tooltip keys. */
+.tsb__s0 {
+  --tsb-color: var(--color-muted);
+}
+.tsb__s1 {
+  --tsb-color: var(--viz-series-1);
+}
+.tsb__s2 {
+  --tsb-color: var(--viz-series-2);
+}
+.tsb__s3 {
+  --tsb-color: var(--viz-series-3);
+}
+.tsb__s4 {
+  --tsb-color: var(--viz-series-4);
+}
+
+.tsb__sr {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- Caption -------------------------------------------------------------- */
+.tsb__caption {
+  margin-bottom: 0.9rem;
+}
+.tsb .tsb__eyebrow {
+  margin: 0 0 0.3rem;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tsb .tsb__title {
+  margin: 0 0 0.45rem;
+  font-size: clamp(1.15rem, 3vw, 1.4rem);
+  font-weight: 900;
+  line-height: 1.25;
+}
+.tsb .tsb__sub {
+  margin: 0;
+  max-width: 46rem;
+  color: var(--color-muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.tsb .tsb__sub + .tsb__sub {
+  margin-top: 0.45rem;
+}
+.tsb__sub strong {
+  color: var(--color-fg);
+}
+/* The caveat that has to travel with the plot, set a step quieter. */
+.tsb .tsb__sub--caveat {
+  margin-top: 0.6rem;
+  border-left: 2px solid var(--color-border);
+  padding-left: 0.6rem;
+  font-size: 0.78rem;
+}
+.tsb code {
+  font-size: 0.9em;
+}
+
+/* --- Legend --------------------------------------------------------------- */
+.tsb .tsb__legend {
+  display: flex;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.2rem;
+  list-style: none;
+}
+.tsb .tsb__legend-item {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  gap: 0.4rem;
+  color: var(--color-fg);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+/* Comparison legend: each entry shows or hides its simulator. */
+.tsb .tsb__legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.1rem 0.35rem;
+  margin: -0.1rem -0.35rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.tsb .tsb__legend-toggle:hover {
+  background: var(--color-surface-hover);
+}
+.tsb .tsb__legend-toggle[aria-pressed='false'] {
+  opacity: 0.45;
+}
+.tsb .tsb__legend-toggle[aria-pressed='false'] span {
+  text-decoration: line-through;
+}
+.tsb__glyph {
+  width: 0.8rem;
+  height: 0.8rem;
+  flex: none;
+  overflow: visible;
+}
+.tsb__glyph path,
+.tsb__mark path {
+  fill: var(--tsb-color);
+  stroke: var(--color-surface);
+  stroke-width: 1.5;
+}
+/* Tsim 0.1.5: hollow, so "before" never rests on the grey alone. */
+.tsb__ring path {
+  fill: var(--color-surface);
+  stroke: var(--tsb-color);
+  stroke-width: 2;
+}
+
+/* --- Segmented toggles ----------------------------------------------------- */
+.tsb__controls {
+  display: flex;
+  margin: 0 0 0.85rem;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.1rem;
+}
+.tsb__control {
+  display: grid;
+  gap: 0.3rem;
+  justify-items: start;
+}
+.tsb__control-label {
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tsb__segments {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-bg);
+}
+.tsb__segments button {
+  padding: 0.32rem 0.75rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+}
+.tsb__segments button:hover {
+  color: var(--brand-strong);
+}
+.tsb__segments button[aria-pressed='true'] {
+  background: var(--brand-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 40%, transparent);
+  color: var(--brand-strong);
+}
+.tsb__segments button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+/* What the axis currently shows; doubles as the plot's running caption. */
+.tsb .tsb__note {
+  margin: 0 0 0.35rem;
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+/* --- Row chart -------------------------------------------------------------
+ * One row per circuit on a shared, decade-aligned log axis. Decades are evenly
+ * spaced, so the grid is one repeating gradient sized by `--decades`, inset by
+ * `--tsb-inset` so a mark at either end of the axis is never clipped. */
+.tsb__chart {
+  --decades: 4;
+}
+.tsb__head,
+.tsb__row {
+  display: grid;
+  align-items: center;
+  column-gap: 0.65rem;
+  grid-template-areas: 'name plot value';
+  grid-template-columns: 11rem minmax(0, 1fr) 8.8rem;
+}
+.tsb--compare .tsb__head,
+.tsb--compare .tsb__row {
+  grid-template-areas: 'name k plot value';
+  grid-template-columns: 11rem 1.5rem minmax(0, 1fr) 4.4rem;
+}
+.tsb__head {
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.tsb__head-name {
+  grid-area: name;
+}
+.tsb__head-k {
+  grid-area: k;
+  text-align: right;
+}
+.tsb__head-unit {
+  grid-area: value;
+  text-align: right;
+}
+.tsb__ticks {
+  position: relative;
+  grid-area: plot;
+  height: 1.1rem;
+  margin-inline: var(--tsb-inset);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+.tsb__tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.tsb__tick:first-child {
+  transform: translateX(calc(-1 * var(--tsb-inset)));
+}
+.tsb__tick:last-child {
+  transform: translateX(calc(-100% + var(--tsb-inset)));
+}
+
+.tsb__row {
+  border-bottom: 1px solid var(--color-border);
+}
+.tsb__name {
+  display: grid;
+  grid-area: name;
+  min-width: 0;
+  padding: 0.5rem 0;
+  gap: 0.1rem;
+}
+.tsb .tsb__name a,
+.tsb__name-text {
+  color: var(--color-fg);
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-decoration-color: color-mix(in srgb, var(--brand) 55%, transparent);
+  text-underline-offset: 3px;
+}
+.tsb .tsb__name a:hover {
+  color: var(--brand-strong);
+}
+.tsb .tsb__name a:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.tsb__meta {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+.tsb__tag {
+  margin-left: 0.35rem;
+  padding: 0 0.35rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.tsb__tag[hidden] {
+  display: none;
+}
+
+.tsb__plot {
+  display: grid;
+  position: relative;
+  grid-area: plot;
+  align-content: center;
+  align-self: stretch;
+  padding: 0.55rem 0;
+  gap: 3px;
+  border-radius: 4px;
+  background-image: linear-gradient(to right, var(--tsb-grid) 1px, transparent 1px);
+  background-position: var(--tsb-inset) 0;
+  background-repeat: repeat-x;
+  background-size: calc((100% - 2 * var(--tsb-inset)) / var(--decades)) 100%;
+  cursor: default;
+}
+.tsb__plot.is-active {
+  background-color: var(--color-surface-hover);
+}
+.tsb__plot:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+/* Relative view: the 1× reference is the left edge, drawn a step stronger. */
+.tsb--compare[data-view='relative'] .tsb__plot::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--tsb-inset);
+  width: 1px;
+  background: color-mix(in srgb, var(--color-muted) 70%, transparent);
+  content: '';
+}
+
+.tsb__lane {
+  position: relative;
+  height: 15px;
+  margin-inline: var(--tsb-inset);
+}
+.tsb__stem {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: var(--x);
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--tsb-color) 50%, transparent);
+}
+.tsb__mark {
+  position: absolute;
+  top: 50%;
+  left: var(--x);
+  width: 12px;
+  height: 12px;
+  overflow: visible;
+  transform: translate(-50%, -50%);
+}
+.tsb__lane:not([data-kind='ok']) .tsb__stem,
+.tsb__lane:not([data-kind='ok']) .tsb__mark {
+  display: none;
+}
+.tsb__row[hidden],
+.tsb--compare[data-metric='compile'] [data-sampling-only],
+.tsb--bars[data-metric='compile'] [data-sampling-only] {
+  display: none;
+}
+.tsb__lane[hidden],
+.tsb__ks [hidden],
+.tsb__values [hidden] {
+  display: none;
+}
+.tsb .tsb__more {
+  margin: 0.6rem 0 0;
+  padding: 0.35rem 0;
+  border: 0;
+  background: none;
+  color: var(--brand-strong);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+.tsb .tsb__more:hover {
+  text-decoration: underline;
+}
+.tsb .tsb__more:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Compare: the stem spans baseline → target and the open mark is the baseline. */
+.tsb__lane .tsb__mark--base {
+  left: var(--from);
+}
+.tsb__lane:not([data-compare]) .tsb__mark--base {
+  display: none;
+}
+.tsb__lane[data-compare] .tsb__stem {
+  left: min(var(--from), var(--x));
+  width: calc(max(var(--from), var(--x)) - min(var(--from), var(--x)));
+}
+
+/* K column and value column: one line per lane, aligned with the lanes. */
+.tsb__ks,
+.tsb__values {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.tsb__ks {
+  grid-area: k;
+  color: var(--color-muted);
+}
+.tsb__values {
+  grid-area: value;
+  color: var(--color-muted);
+}
+.tsb__ks span,
+.tsb__values span {
+  height: 15px;
+  line-height: 15px;
+  white-space: nowrap;
+}
+/* The fastest engine in a row carries the ink; the rest stay secondary. */
+.tsb__values .is-best {
+  color: var(--color-fg);
+  font-weight: 900;
+}
+.tsb__values [data-kind='pending'],
+.tsb__values [data-kind='na'],
+.tsb__readout [data-kind='pending'],
+.tsb__readout [data-kind='na'] {
+  font-style: italic;
+}
+
+/* --- Lanes on one circuit (TsimStimComparison) --------------------------------
+ * The comparison's line-and-mark lanes, one row per simulator. Stim's line is
+ * dashed: it samples a Clifford proxy, not the measured circuit. */
+.tsb--bars .tsb__head,
+.tsb--bars .tsb__row {
+  grid-template-columns: 13.5rem minmax(0, 1fr) 4.4rem;
+}
+.tsb--bars .tsb__note-title {
+  margin-right: 0.45rem;
+  color: var(--color-fg);
+  font-weight: 700;
+  text-decoration-color: color-mix(in srgb, var(--brand) 55%, transparent);
+  text-underline-offset: 3px;
+}
+.tsb--bars a.tsb__note-title:hover {
+  color: var(--brand-strong);
+}
+.tsb--bars a.tsb__note-title:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.tsb__name-engine {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+/* A simulator that cannot run the setting keeps its row, labelled in the lane. */
+.tsb__lane-note {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-style: italic;
+  white-space: nowrap;
+}
+.tsb__lane:not([data-kind='na']) .tsb__lane-note {
+  display: none;
+}
+.tsb__stem--proxy {
+  background: repeating-linear-gradient(
+    to right,
+    color-mix(in srgb, var(--tsb-color) 70%, transparent) 0 5px,
+    transparent 5px 9px
+  );
+}
+
+/* --- Release dumbbells ----------------------------------------------------- */
+.tsb__lane--dumbbell {
+  height: 22px;
+}
+.tsb__span {
+  position: absolute;
+  top: 50%;
+  left: var(--from);
+  width: calc(var(--to) - var(--from));
+  height: 2px;
+  margin-top: -1px;
+  background: color-mix(in srgb, var(--viz-series-1) 55%, transparent);
+}
+.tsb__lane--dumbbell .tsb__mark {
+  width: 14px;
+  height: 14px;
+}
+.tsb__readout {
+  display: grid;
+  grid-area: value;
+  justify-items: end;
+  padding: 0.45rem 0;
+  gap: 0.05rem;
+  text-align: right;
+}
+.tsb__speedup {
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.tsb__speedup[data-kind='pending'],
+.tsb__speedup[data-kind='na'] {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+.tsb__speedup-note,
+.tsb__from-to {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.tsb__panel[hidden] {
+  display: none;
+}
+
+/* --- Tooltip -------------------------------------------------------------- */
+.tsb__tip {
+  position: fixed;
+  z-index: 60;
+  width: max-content;
+  max-width: min(23rem, calc(100vw - 1rem));
+  padding: 0.6rem 0.75rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+  box-shadow: 0 16px 36px -18px rgb(0 0 0 / 55%);
+  color: var(--color-fg);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  pointer-events: none;
+}
+.tsb__tip[hidden] {
+  display: none;
+}
+.tsb .tsb__tip p {
+  margin: 0;
+}
+.tsb .tsb__tip-title {
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+.tsb .tsb__tip-meta {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+.tsb__tip-item {
+  margin-top: 0.45rem;
+}
+.tsb__tip-head {
+  display: grid;
+  align-items: center;
+  gap: 0.45rem;
+  grid-template-columns: 0.8rem minmax(0, 1fr) auto;
+}
+.tsb__tip-name {
+  color: var(--color-muted);
+  font-weight: 700;
+}
+/* Values lead in the tooltip: the reader has the series, wants the number. */
+.tsb__tip-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
+.tsb .tsb__tip-notes {
+  padding-left: 1.25rem;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+.tsb .tsb__tip-foot {
+  margin-top: 0.45rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.35rem;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+
+/* --- Disclosures + tables -------------------------------------------------- */
+.tsb__details,
+.tsb__table {
+  margin-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+}
+.tsb__table {
+  margin-top: 0.75rem;
+}
+.tsb__details > summary,
+.tsb__table > summary {
+  color: var(--brand-strong);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.tsb__details > summary:focus-visible,
+.tsb__table > summary:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.tsb__specs {
+  display: grid;
+  margin: 0.85rem 0 0;
+  gap: 0.1rem 1rem;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+.tsb__specs dt {
+  color: var(--color-fg);
+  font-weight: 700;
+}
+.tsb__specs dd {
+  margin: 0 0 0.5rem;
+  color: var(--color-muted);
+}
+.tsb__scroll {
+  overflow-x: auto;
+}
+.tsb table {
+  width: 100%;
+  margin: 0.85rem 0 0;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+.tsb caption {
+  margin-bottom: 0.3rem;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: left;
+}
+.tsb th,
+.tsb td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.3rem 0.45rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.tsb thead th {
+  color: var(--color-muted);
+  font-weight: 700;
+  vertical-align: bottom;
+}
+.tsb tbody th {
+  color: var(--color-fg);
+  text-align: left;
+}
+.tsb th[scope='colgroup'] {
+  text-align: center;
+}
+.tsb td[data-kind='na'],
+.tsb td[data-kind='pending'] {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+/* --- K table ---------------------------------------------------------------- */
+.tsb--width table {
+  margin-top: 0;
+  font-size: 0.84rem;
+}
+.tsb--width thead th {
+  white-space: nowrap;
+}
+.tsb--width thead th:first-child {
+  text-align: left;
+}
+/* "Active width K" spans the three engine columns. */
+.tsb .tsb__group-row td {
+  border-bottom: 0;
+}
+.tsb .tsb__group-row th {
+  padding-bottom: 0.15rem;
+  color: var(--color-fg);
+  text-align: center;
+}
+.tsb__th-engine {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.tsb__k {
+  display: inline-block;
+  min-width: 2.2rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 6px;
+  text-align: center;
+}
+.tsb__k--none {
+  color: var(--color-muted);
+}
+/* The lowest K per row is bold. */
+.tsb__k--lowest {
+  color: var(--color-fg);
+  font-weight: 900;
+}
+.tsb .tsb__empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.84rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tsb__mark {
+    transition: left 0.3s ease;
+  }
+  .tsb__stem {
+    transition:
+      left 0.3s ease,
+      width 0.3s ease;
+  }
+}
+
+/* Touch: segment buttons, legend toggles and disclosure summaries reach the 44px
+ * minimum, and circuit links grow their hit box without moving a glyph (block
+ * padding cancelled by an equal negative margin). Same break the other blog
+ * figures use. */
+@media (max-width: 50rem) {
+  .tsb__segments button {
+    min-height: 2.75rem;
+    padding-inline: 0.9rem;
+  }
+  .tsb .tsb__legend {
+    row-gap: 0;
+  }
+  .tsb .tsb__legend-toggle {
+    min-height: 2.75rem;
+    margin-block: 0;
+  }
+  .tsb__details > summary,
+  .tsb__table > summary {
+    min-height: 2.75rem;
+    padding: 0.75rem 0;
+  }
+  .tsb .tsb__name a,
+  .tsb--width tbody th a {
+    display: inline-block;
+    margin-block: -0.85rem;
+    padding-block: 0.85rem;
+  }
+}
+
+/* Narrow cards: the circuit name takes its own line above the plot, so the axis
+ * keeps most of the width. Keyed to the chart's own width (a container query on
+ * `.tsb__chart`, not on `.tsb`: layout containment there would turn the card into
+ * the fixed-position tooltip's containing block). Every other tick label drops
+ * wherever the plot column gets too narrow for all of them. */
+.tsb__chart {
+  container-type: inline-size;
+}
+@container (max-width: 34rem) {
+  .tsb__head,
+  .tsb__row {
+    grid-template-areas:
+      'name name'
+      'plot value';
+    grid-template-columns: minmax(0, 1fr) 7rem;
+  }
+  .tsb__speedup {
+    font-size: 1.05rem;
+  }
+  .tsb--compare .tsb__head,
+  .tsb--compare .tsb__row {
+    grid-template-areas:
+      'name name name'
+      'k plot value';
+    grid-template-columns: 1.3rem minmax(0, 1fr) 4rem;
+    column-gap: 0.45rem;
+  }
+  .tsb--bars .tsb__head,
+  .tsb--bars .tsb__row {
+    grid-template-columns: minmax(0, 1fr) 4rem;
+  }
+  .tsb__head-name {
+    display: none;
+  }
+  .tsb__name {
+    padding-bottom: 0;
+  }
+  .tsb__plot {
+    padding-top: 0.35rem;
+  }
+}
+@container (max-width: 30rem) {
+  .tsb__tick--minor {
+    display: none;
+  }
+}
+@container (min-width: 34rem) and (max-width: 42rem) {
+  .tsb__tick--minor {
+    display: none;
+  }
+}
+
+/* Phones: small text steps up to the 12px floor. */
+@media (max-width: 40rem) {
+  .tsb .tsb__eyebrow,
+  .tsb code,
+  .tsb__head,
+  .tsb__meta,
+  .tsb__ks,
+  .tsb__values,
+  .tsb__speedup-note,
+  .tsb__from-to,
+  .tsb__control-label,
+  .tsb .tsb__tip-meta,
+  .tsb .tsb__tip-notes,
+  .tsb .tsb__tip-foot,
+  .tsb table,
+  .tsb caption {
+    font-size: 0.75rem;
+  }
+  .tsb__specs {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .tsb__specs dt {
+    margin-top: 0.5rem;
+  }
+  /* The K table keeps all five columns on a phone: engine names wrap under
+   * their marker instead of pushing the last column into a scroller. */
+  .tsb--width thead th {
+    white-space: normal;
+  }
+  .tsb__th-engine {
+    display: inline-grid;
+    justify-items: end;
+    gap: 0.15rem;
+  }
+  .tsb--width th,
+  .tsb--width td {
+    padding-inline: 0.3rem;
+  }
+}
+
+/* Additions for this widget */
+.tsb { margin: 0; }
+.tsb__control[hidden] { display: none; }
+.tsb__s5 { --tsb-color: var(--viz-series-5); }
+.tsb--compare .tsb__head, .tsb--compare .tsb__row {
+  grid-template-columns: 13rem 1.6rem minmax(0, 1fr) 4.6rem;
+}
+.tsb__lane-note { left: 0; }
+.tsb__glyph path, .tsb__mark path { fill: var(--tsb-color); }
+</style>
+</head>
+<body>
+<figure class="tsb tsb--compare" data-sim data-metric="sampling">
+  <div class="tsb__controls">
+    <div class="tsb__control">
+      <span class="tsb__control-label">Simulators</span>
+      <div class="tsb__segments" role="group" data-setting="mode">
+        <button type="button" data-value="all" aria-pressed="true">All</button>
+        <button type="button" data-value="tsim" aria-pressed="false">Tsim devices</button>
+      </div>
+    </div>
+    <div class="tsb__control">
+      <span class="tsb__control-label">Measure</span>
+      <div class="tsb__segments" role="group" data-setting="metric">
+        <button type="button" data-value="sampling" aria-pressed="true">Sampling</button>
+        <button type="button" data-value="compile" aria-pressed="false">Compilation</button>
+      </div>
+    </div>
+    <div class="tsb__control" data-sampling-control>
+      <span class="tsb__control-label">Postselection</span>
+      <div class="tsb__segments" role="group" data-setting="post">
+        <button type="button" data-value="on" aria-pressed="true">On</button>
+        <button type="button" data-value="off" aria-pressed="false">Off</button>
+      </div>
+    </div>
+    <div class="tsb__control" data-threads-control>
+      <span class="tsb__control-label">CPU threads</span>
+      <div class="tsb__segments" role="group" data-setting="threads">
+        <button type="button" data-value="1t" aria-pressed="true">1</button>
+        <button type="button" data-value="mt" aria-pressed="false">12</button>
+      </div>
+    </div>
+  </div>
+  <ul class="tsb__legend" data-legend aria-label="Simulators shown; click to show or hide"></ul>
+  <div class="tsb__chart" data-chart data-tip-group>
+    <div class="tsb__head" aria-hidden="true">
+      <span class="tsb__head-name">Circuit</span>
+      <span class="tsb__head-k" title="K: most qubits in a dense statevector at once">K</span>
+      <div class="tsb__ticks" data-ticks></div>
+      <span class="tsb__head-unit" data-unit></span>
+    </div>
+    <div data-rows></div>
+  </div>
+  <div class="tsb__tip" data-tip-host aria-hidden="true" hidden></div>
+  <details class="tsb__details">
+    <summary>Run details</summary>
+    <dl class="tsb__specs" data-specs></dl>
+  </details>
+</figure>
+<script type="application/json" data-model>{"circuits": [{"id": "papers/2406.17653_transversal_algorithmic_ft/stim/s_injection_T_d5_p0.001_pinj0.1.stim", "label": "Injection, d=5", "paper": "Zhou et al. (2024), arXiv:2406.17653", "url": "https://github.com/rafaelha/tsim-bench/blob/master/papers/2406.17653_transversal_algorithmic_ft/stim/s_injection_T_d5_p0.001_pinj0.1.stim", "meta": "s_injection_T_d5_p0.001_pinj0.1 \u00b7 K = 1"}, {"id": "papers/2409.17595_magic_state_cultivation/stim/inject_cultivate_d3_p0.001.stim", "label": "Cultivation, d=3", "paper": "Gidney, Shutty, Jones (2024), arXiv:2409.17595", "url": "https://github.com/rafaelha/tsim-bench/blob/master/papers/2409.17595_magic_state_cultivation/stim/inject_cultivate_d3_p0.001.stim", "meta": "inject_cultivate_d3_p0.001 \u00b7 K = 4"}, {"id": "papers/2409.17595_magic_state_cultivation/stim/inject_cultivate_d5_p0.001.stim", "label": "Cultivation, d=5", "paper": "Gidney, Shutty, Jones (2024), arXiv:2409.17595", "url": "https://github.com/rafaelha/tsim-bench/blob/master/papers/2409.17595_magic_state_cultivation/stim/inject_cultivate_d5_p0.001.stim", "meta": "inject_cultivate_d5_p0.001 \u00b7 K = 6"}, {"id": "papers/2409.17595_magic_state_cultivation/stim/end2end_d5_dsurface15_p0.001.stim", "label": "Cultivation end-to-end, d=5", "paper": "Gidney, Shutty, Jones (2024), arXiv:2409.17595", "url": "https://github.com/rafaelha/tsim-bench/blob/master/papers/2409.17595_magic_state_cultivation/stim/end2end_d5_dsurface15_p0.001.stim", "meta": "end2end_d5_dsurface15_p0.001 \u00b7 K = 6"}, {"id": "papers/2509.05212_fold_transversal_cultivation/stim/fold-d5_native_T_p0.001.stim", "label": "Fold-transversal cultivation, d=5", "paper": "Sahay et al. (2025), arXiv:2509.05212", "url": "https://github.com/rafaelha/tsim-bench/blob/master/papers/2509.05212_fold_transversal_cultivation/stim/fold-d5_native_T_p0.001.stim", "meta": "fold-d5_native_T_p0.001 \u00b7 K = 8"}, {"id": "papers/2503.18657_rp2_cultivation/stim/rp_3_rp_5_T_cult.stim", "label": "RP\u00b2 cultivation, d=3\u21925", "paper": "Chen et al. (2025), arXiv:2503.18657", "url": "https://github.com/rafaelha/tsim-bench/blob/master/papers/2503.18657_rp2_cultivation/stim/rp_3_rp_5_T_cult.stim", "meta": "rp_3_rp_5_T_cult \u00b7 K = 10"}, {"id": "papers/2505.13587_correlated_decoding_distillation/stim/distillation_15to1_T_d5_p0.001.stim", "label": "15-to-1 distillation, d=5", "paper": "Cain et al. (2025), arXiv:2505.13587", "url": "https://github.com/rafaelha/tsim-bench/blob/master/papers/2505.13587_correlated_decoding_distillation/stim/distillation_15to1_T_d5_p0.001.stim", "meta": "distillation_15to1_T_d5_p0.001 \u00b7 K = 4"}, {"id": "papers/2610.06811_merlin/stim/distillation_bh10_p0.001.stim", "label": "Bravyi\u2013Haah 38-to-10", "paper": "Cercelescu, Koch, Pesah (2026), arXiv:2610.06811", "url": "https://github.com/rafaelha/tsim-bench/blob/master/papers/2610.06811_merlin/stim/distillation_bh10_p0.001.stim", "meta": "distillation_bh10_p0.001 \u00b7 K = 4"}, {"id": "papers/2610.22315_magna/stim/bh100-T.stim", "label": "Bravyi\u2013Haah 308-to-100", "paper": "Wang, Gu (2026), arXiv:2610.22315", "url": "https://github.com/rafaelha/tsim-bench/blob/master/papers/2610.22315_magna/stim/bh100-T.stim", "meta": "bh100-T \u00b7 K = 3"}, {"id": "papers/2610.06811_merlin/stim/code_switching_bt27_p0.001.stim", "label": "Code switching, BT27", "paper": "Cercelescu, Koch, Pesah (2026), arXiv:2610.06811", "url": "https://github.com/rafaelha/tsim-bench/blob/master/papers/2610.06811_merlin/stim/code_switching_bt27_p0.001.stim", "meta": "code_switching_bt27_p0.001 \u00b7 K = 26"}, {"id": "papers/2610.06811_merlin/stim/code_switching_bt81_p0.001.stim", "label": "Code switching, BT81", "paper": "Cercelescu, Koch, Pesah (2026), arXiv:2610.06811", "url": "https://github.com/rafaelha/tsim-bench/blob/master/papers/2610.06811_merlin/stim/code_switching_bt81_p0.001.stim", "meta": "code_switching_bt81_p0.001"}, {"id": "papers/2607.28600_symft/stim/coherent_surface_d5_r5_p1e-3_rz0p02.stim", "label": "Coherent R_Z noise, surface d=5", "paper": "SymFT (2026), arXiv:2607.28600", "url": "https://github.com/rafaelha/tsim-bench/blob/master/papers/2607.28600_symft/stim/coherent_surface_d5_r5_p1e-3_rz0p02.stim", "meta": "coherent_surface_d5_r5_p1e-3_rz0p02 \u00b7 K = 11"}, {"id": "papers/2509.18294_transversal_star/stim/star_d=9.stim", "label": "Transversal STAR, d=9", "paper": "Ismail et al. (2025), arXiv:2509.18294", "url": "https://github.com/rafaelha/tsim-bench/blob/master/papers/2509.18294_transversal_star/stim/star_d=9.stim", "meta": "star_d=9 \u00b7 K = 2"}], "cells": {"papers/2406.17653_transversal_algorithmic_ft/stim/s_injection_T_d5_p0.001_pinj0.1.stim": {"tsim-cpu-1t": {"shots_per_s": 35000000.0, "compile_s": 0.063, "warmup_s": 0.468, "k_max": 1, "k_name": "tsim largest component width", "shots": 10737415, "seconds": 0.3062, "detection_rate": 0.00301, "observable_rate": 0.686, "suspect": false, "kept": 0.9118, "threads": 1, "note": null}, "tsim-cpu-1t|post-off": {"shots_per_s": 33550000.0, "compile_s": 0.0631, "warmup_s": 0.461, "k_max": 1, "k_name": "tsim largest component width", "shots": 10737415, "seconds": 0.2882, "detection_rate": 0.00434, "observable_rate": 0.679, "suspect": false, "kept": 1.0, "threads": 1, "note": null}, "tsim-cpu-mt": {"shots_per_s": 215400000.0, "compile_s": 0.0203, "warmup_s": 0.175, "k_max": 1, "k_name": "tsim largest component width", "shots": 51539592, "seconds": 0.2392, "detection_rate": 0.00301, "observable_rate": 0.686, "suspect": false, "kept": 0.9117, "threads": 12, "note": null}, "tsim-cpu-mt|post-off": {"shots_per_s": 260100000.0, "compile_s": 0.0204, "warmup_s": 0.177, "k_max": 1, "k_name": "tsim largest component width", "shots": 73014422, "seconds": 0.2675, "detection_rate": 0.00434, "observable_rate": 0.679, "suspect": false, "kept": 1.0, "threads": 12, "note": null}, "tsim-cuda": {"shots_per_s": 2738000000.0, "compile_s": 0.673, "warmup_s": 1.16, "k_max": 1, "k_name": "tsim largest component width", "shots": 120259048, "seconds": 0.04224, "detection_rate": 0.00301, "observable_rate": 0.686, "suspect": false, "kept": 0.9118, "threads": null, "note": null}, "tsim-cuda|post-off": {"shots_per_s": 2651000000.0, "compile_s": 0.84, "warmup_s": 0.0306, "k_max": 1, "k_name": "tsim largest component width", "shots": 53687075, "seconds": 0.02, "detection_rate": 0.00434, "observable_rate": 0.679, "suspect": false, "kept": 1.0, "threads": null, "note": null}, "clifft-1t": {"shots_per_s": 17180000.0, "compile_s": 0.0082, "warmup_s": 0.25, "k_max": 2, "k_name": "clifft peak_active_width", "shots": 67108864, "seconds": 3.906, "detection_rate": null, "observable_rate": 0.687, "suspect": false, "kept": 0.9118, "threads": 1, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-1t|post-off": {"shots_per_s": 7451000.0, "compile_s": 0.0081, "warmup_s": 0.25, "k_max": 2, "k_name": "clifft peak_active_width", "shots": 7087404, "seconds": 0.9513, "detection_rate": 0.00434, "observable_rate": 0.678, "suspect": false, "kept": 1.0, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up", "threads": 1}, "clifft-mt": {"shots_per_s": 176400000.0, "compile_s": 0.0084, "warmup_s": 0.25, "k_max": 2, "k_name": "clifft peak_active_width", "shots": 536870912, "seconds": 3.043, "detection_rate": null, "observable_rate": 0.687, "suspect": false, "kept": 0.9118, "threads": 12, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-mt|post-off": {"shots_per_s": 17550000.0, "compile_s": 0.0085, "warmup_s": 0.251, "k_max": 2, "k_name": "clifft peak_active_width", "shots": 7087404, "seconds": 0.4038, "detection_rate": 0.00435, "observable_rate": 0.679, "suspect": false, "kept": 1.0, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up", "threads": 12}, "symft-1t": {"shots_per_s": 21420000.0, "compile_s": 0.0033, "warmup_s": 0.0001, "k_max": 2, "k_name": "symft max_active_qubits", "shots": 67108864, "seconds": 3.134, "detection_rate": null, "observable_rate": null, "suspect": null, "kept": 0.7766, "post_note": "SymFT postselects all detectors or none: used all 124 (manifest: 11)", "threads": 1, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-1t|post-off": {"shots_per_s": 556500.0, "compile_s": 0.0074, "warmup_s": 0.0001, "k_max": 2, "k_name": "symft max_active_qubits", "shots": 2097152, "seconds": 3.769, "detection_rate": 0.00433, "observable_rate": 0.679, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "symft-mt": {"shots_per_s": 104000000.0, "compile_s": 0.0049, "warmup_s": 0.0001, "k_max": 2, "k_name": "symft max_active_qubits", "shots": 268435456, "seconds": 2.58, "detection_rate": null, "observable_rate": null, "suspect": null, "kept": 0.7766, "post_note": "SymFT postselects all detectors or none: used all 124 (manifest: 11)", "threads": 12, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-mt|post-off": {"shots_per_s": 2086000.0, "compile_s": 0.0296, "warmup_s": 0.0013, "k_max": 2, "k_name": "symft max_active_qubits", "shots": 4194304, "seconds": 2.011, "detection_rate": 0.00432, "observable_rate": 0.679, "suspect": false, "kept": 1.0, "threads": 12, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "xtim-1t": {"shots_per_s": 26190000.0, "compile_s": 0.024, "warmup_s": 0.0017, "k_max": null, "k_name": null, "shots": 67108864, "seconds": 2.562, "detection_rate": 0.00301, "observable_rate": 0.687, "suspect": false, "kept": 0.9118, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-1t|post-off": {"shots_per_s": 27120000.0, "compile_s": 0.0239, "warmup_s": 0.0021, "k_max": null, "k_name": null, "shots": 67108864, "seconds": 2.474, "detection_rate": 0.00432, "observable_rate": 0.678, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "xtim-mt": {"shots_per_s": 114600000.0, "compile_s": 0.0249, "warmup_s": 0.0019, "k_max": null, "k_name": null, "shots": 126322567, "seconds": 1.103, "detection_rate": 0.003, "observable_rate": 0.687, "suspect": false, "kept": 0.9118, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)", "threads": 12}, "xtim-mt|post-off": {"shots_per_s": 161500000.0, "compile_s": 0.026, "warmup_s": 0.0024, "k_max": null, "k_name": null, "shots": 126322567, "seconds": 0.7821, "detection_rate": 0.00431, "observable_rate": 0.678, "suspect": false, "kept": 1.0, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)", "threads": 12}, "magna-1t": {"shots_per_s": 165800.0, "compile_s": 0.0355, "warmup_s": 0.0003, "k_max": null, "k_name": null, "shots": 524288, "seconds": 3.162, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.9116, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-1t|post-off": {"shots_per_s": 155900.0, "compile_s": 0.0351, "warmup_s": 0.0003, "k_max": null, "k_name": null, "shots": 524288, "seconds": 3.364, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt": {"shots_per_s": 1661000.0, "compile_s": 0.0462, "warmup_s": 0.0013, "k_max": null, "k_name": null, "shots": 4194304, "seconds": 2.525, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.9117, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt|post-off": {"shots_per_s": 1579000.0, "compile_s": 0.0452, "warmup_s": 0.0015, "k_max": null, "k_name": null, "shots": 4194304, "seconds": 2.656, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda": {"shots_per_s": 506300000.0, "compile_s": 0.0388, "warmup_s": 0.429, "k_max": null, "k_name": null, "shots": 1073741824, "seconds": 2.121, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.9118, "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda|post-off": {"shots_per_s": 809000000.0, "compile_s": 0.0392, "warmup_s": 0.415, "k_max": null, "k_name": null, "shots": 2147483648, "seconds": 2.655, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "tsim-metal": {"shots_per_s": 2254577683.801242, "compile_s": 0.9197483749594539, "k_max": 1, "k_name": "active width", "kept": 0.9117673078527021, "device": "metal", "tsim_version": "1.1.0", "threads": null}, "tsim-metal|post-off": {"shots_per_s": 2902142495.075028, "compile_s": 0.1712003750144504, "k_max": 1, "k_name": "active width", "kept": 1.0, "device": "metal", "tsim_version": "1.1.0", "threads": null}}, "papers/2409.17595_magic_state_cultivation/stim/inject_cultivate_d3_p0.001.stim": {"tsim-cpu-1t": {"shots_per_s": 28510000.0, "compile_s": 0.07, "warmup_s": 0.473, "k_max": 4, "k_name": "tsim largest component width", "shots": 10020846, "seconds": 0.3122, "detection_rate": 0.0, "observable_rate": 0.0, "suspect": false, "kept": 0.6868, "threads": 1, "note": null}, "tsim-cpu-1t|post-off": {"shots_per_s": 26100000.0, "compile_s": 0.071, "warmup_s": 0.469, "k_max": 4, "k_name": "tsim largest component width", "shots": 7972369, "seconds": 0.3049, "detection_rate": 0.0599, "observable_rate": 0.0241, "suspect": false, "kept": 1.0, "threads": 1, "note": null}, "tsim-cpu-mt": {"shots_per_s": 215200000.0, "compile_s": 0.0228, "warmup_s": 0.227, "k_max": 4, "k_name": "tsim largest component width", "shots": 51130560, "seconds": 0.2209, "detection_rate": 0.0, "observable_rate": 0.0, "suspect": false, "kept": 0.6868, "threads": 12, "note": null}, "tsim-cpu-mt|post-off": {"shots_per_s": 127600000.0, "compile_s": 0.0223, "warmup_s": 0.18, "k_max": 4, "k_name": "tsim largest component width", "shots": 25565280, "seconds": 0.1805, "detection_rate": 0.0599, "observable_rate": 0.0241, "suspect": false, "kept": 1.0, "threads": 12, "note": null}, "tsim-cuda": {"shots_per_s": 12420000000.0, "compile_s": 0.74, "warmup_s": 1.72, "k_max": 4, "k_name": "tsim largest component width", "shots": 613566720, "seconds": 0.04908, "detection_rate": 0.0, "observable_rate": 0.0, "suspect": false, "kept": 0.6868, "threads": null, "note": null}, "tsim-cuda|post-off": {"shots_per_s": 10890000000.0, "compile_s": 0.687, "warmup_s": 1.7, "k_max": 4, "k_name": "tsim largest component width", "shots": 319566000, "seconds": 0.02921, "detection_rate": 0.0599, "observable_rate": 0.0241, "suspect": false, "kept": 1.0, "threads": null, "note": null}, "clifft-1t": {"shots_per_s": 4854000.0, "compile_s": 0.0061, "warmup_s": 0.251, "k_max": 4, "k_name": "clifft peak_active_width", "shots": 16777216, "seconds": 3.456, "detection_rate": null, "observable_rate": 8.39e-07, "suspect": false, "kept": 0.6868, "threads": 1, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-1t|post-off": {"shots_per_s": 4625000.0, "compile_s": 0.0061, "warmup_s": 0.25, "k_max": 4, "k_name": "clifft peak_active_width", "shots": 16777216, "seconds": 3.628, "detection_rate": 0.0595, "observable_rate": 0.024, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "clifft-mt": {"shots_per_s": 41190000.0, "compile_s": 0.0064, "warmup_s": 0.25, "k_max": 4, "k_name": "clifft peak_active_width", "shots": 134217728, "seconds": 3.258, "detection_rate": null, "observable_rate": 8.5e-07, "suspect": false, "kept": 0.6868, "threads": 12, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-mt|post-off": {"shots_per_s": 36880000.0, "compile_s": 0.0063, "warmup_s": 0.25, "k_max": 4, "k_name": "clifft peak_active_width", "shots": 51130563, "seconds": 1.386, "detection_rate": 0.0597, "observable_rate": 0.0243, "suspect": false, "kept": 1.0, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up", "threads": 12}, "symft-1t": {"shots_per_s": 4613000.0, "compile_s": 0.0022, "warmup_s": 0.0, "k_max": 4, "k_name": "symft max_active_qubits", "shots": 16777216, "seconds": 3.637, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.6867, "threads": 1, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-1t|post-off": {"shots_per_s": 2564000.0, "compile_s": 0.0068, "warmup_s": 0.0002, "k_max": 4, "k_name": "symft max_active_qubits", "shots": 8388608, "seconds": 3.271, "detection_rate": 0.0597, "observable_rate": 0.0243, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "symft-mt": {"shots_per_s": 26690000.0, "compile_s": 0.0054, "warmup_s": 0.0, "k_max": 4, "k_name": "symft max_active_qubits", "shots": 67108864, "seconds": 2.514, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.6868, "threads": 12, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-mt|post-off": {"shots_per_s": 8942000.0, "compile_s": 0.024, "warmup_s": 0.0016, "k_max": 4, "k_name": "symft max_active_qubits", "shots": 33554432, "seconds": 3.753, "detection_rate": 0.0597, "observable_rate": 0.0243, "suspect": false, "kept": 1.0, "threads": 12, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "xtim-1t": {"shots_per_s": 56920000.0, "compile_s": 0.0219, "warmup_s": 0.0004, "k_max": null, "k_name": null, "shots": 134217728, "seconds": 2.358, "detection_rate": 0.0, "observable_rate": 5e-06, "suspect": false, "kept": 0.6868, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-1t|post-off": {"shots_per_s": 46910000.0, "compile_s": 0.0171, "warmup_s": 0.0004, "k_max": null, "k_name": null, "shots": 134217728, "seconds": 2.861, "detection_rate": 0.0598, "observable_rate": 0.0237, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "xtim-mt": {"shots_per_s": 143900000.0, "compile_s": 0.0222, "warmup_s": 0.0006, "k_max": null, "k_name": null, "shots": 536870912, "seconds": 3.73, "detection_rate": 0.0, "observable_rate": 0.0, "suspect": false, "kept": 0.6868, "threads": 12, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-mt|post-off": {"shots_per_s": 293000000.0, "compile_s": 0.0176, "warmup_s": 0.0006, "k_max": null, "k_name": null, "shots": 536870912, "seconds": 1.832, "detection_rate": 0.0597, "observable_rate": 0.024, "suspect": false, "kept": 1.0, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)", "threads": 12}, "magna-1t": {"shots_per_s": 210300.0, "compile_s": 0.0249, "warmup_s": 0.0002, "k_max": null, "k_name": null, "shots": 524288, "seconds": 2.493, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.6866, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-1t|post-off": {"shots_per_s": 174100.0, "compile_s": 0.0247, "warmup_s": 0.0003, "k_max": null, "k_name": null, "shots": 524288, "seconds": 3.012, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt": {"shots_per_s": 2179000.0, "compile_s": 0.0378, "warmup_s": 0.0018, "k_max": null, "k_name": null, "shots": 8388608, "seconds": 3.849, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.6869, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt|post-off": {"shots_per_s": 1807000.0, "compile_s": 0.0345, "warmup_s": 0.0014, "k_max": null, "k_name": null, "shots": 4194304, "seconds": 2.321, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda": {"shots_per_s": 390500000.0, "compile_s": 0.0278, "warmup_s": 0.442, "k_max": null, "k_name": null, "shots": 1073741824, "seconds": 2.75, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.6868, "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda|post-off": {"shots_per_s": 532500000.0, "compile_s": 0.0286, "warmup_s": 0.406, "k_max": null, "k_name": null, "shots": 1073741824, "seconds": 2.016, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "tsim-metal": {"shots_per_s": 1943106162.6970165, "compile_s": 0.1618215839844197, "k_max": 4, "k_name": "active width", "kept": 0.6868052121444767, "device": "metal", "tsim_version": "1.1.0", "threads": null}, "tsim-metal|post-off": {"shots_per_s": 1644973134.4542134, "compile_s": 0.15500216599320993, "k_max": 4, "k_name": "active width", "kept": 1.0, "device": "metal", "tsim_version": "1.1.0", "threads": null}}, "papers/2409.17595_magic_state_cultivation/stim/inject_cultivate_d5_p0.001.stim": {"tsim-cpu-1t": {"shots_per_s": 14720000.0, "compile_s": 0.41, "warmup_s": 0.442, "k_max": 6, "k_name": "tsim largest component width", "shots": 4971026, "seconds": 0.337, "detection_rate": 0.0, "observable_rate": 0.0, "suspect": false, "kept": 0.144, "threads": 1, "note": null}, "tsim-cpu-1t|post-off": {"shots_per_s": 1116000.0, "compile_s": 0.409, "warmup_s": 0.434, "k_max": 6, "k_name": "tsim largest component width", "shots": 375265, "seconds": 0.3336, "detection_rate": 0.0596, "observable_rate": 0.0699, "suspect": false, "kept": 1.0, "threads": 1, "note": null}, "tsim-cpu-mt": {"shots_per_s": 94900000.0, "compile_s": 0.132, "warmup_s": 0.171, "k_max": 6, "k_name": "tsim largest component width", "shots": 39768208, "seconds": 0.3099, "detection_rate": 0.0, "observable_rate": 0.0, "suspect": false, "kept": 0.144, "threads": 12, "note": null}, "tsim-cpu-mt|post-off": {"shots_per_s": 2464000.0, "compile_s": 0.136, "warmup_s": 0.144, "k_max": 6, "k_name": "tsim largest component width", "shots": 1048576, "seconds": 0.4245, "detection_rate": 0.0596, "observable_rate": 0.0699, "suspect": false, "kept": 1.0, "threads": 12, "note": null}, "tsim-cuda": {"shots_per_s": 4072000000.0, "compile_s": 1.2, "warmup_s": 0.03, "k_max": 6, "k_name": "tsim largest component width", "shots": 382769002, "seconds": 0.09327, "detection_rate": 0.0, "observable_rate": 0.0, "suspect": false, "kept": 0.144, "threads": null, "note": null}, "tsim-cuda|post-off": {"shots_per_s": 1297000000.0, "compile_s": 1.2, "warmup_s": 7.19, "k_max": 6, "k_name": "tsim largest component width", "shots": 59652312, "seconds": 0.04596, "detection_rate": 0.0596, "observable_rate": 0.0699, "suspect": false, "kept": 1.0, "threads": null, "note": null}, "clifft-1t": {"shots_per_s": 417800.0, "compile_s": 0.0164, "warmup_s": 0.26, "k_max": 10, "k_name": "clifft peak_active_width", "shots": 1048576, "seconds": 2.51, "detection_rate": null, "observable_rate": 0.0, "suspect": false, "kept": 0.1437, "threads": 1, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-1t|post-off": {"shots_per_s": 132000.0, "compile_s": 0.0162, "warmup_s": 0.28, "k_max": 10, "k_name": "clifft peak_active_width", "shots": 524288, "seconds": 3.972, "detection_rate": 0.0595, "observable_rate": 0.0694, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "clifft-mt": {"shots_per_s": 4185000.0, "compile_s": 0.0172, "warmup_s": 0.25, "k_max": 10, "k_name": "clifft peak_active_width", "shots": 8388608, "seconds": 2.005, "detection_rate": null, "observable_rate": 0.0, "suspect": false, "kept": 0.144, "threads": 12, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-mt|post-off": {"shots_per_s": 1247000.0, "compile_s": 0.0179, "warmup_s": 0.253, "k_max": 10, "k_name": "clifft peak_active_width", "shots": 4194304, "seconds": 3.363, "detection_rate": 0.0595, "observable_rate": 0.0699, "suspect": false, "kept": 1.0, "threads": 12, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "symft-1t": {"shots_per_s": 379900.0, "compile_s": 0.0246, "warmup_s": 0.0001, "k_max": 10, "k_name": "symft max_active_qubits", "shots": 1048576, "seconds": 2.76, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.144, "threads": 1, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-1t|post-off": {"shots_per_s": 50840.0, "compile_s": 0.0181, "warmup_s": 0.0004, "k_max": 10, "k_name": "symft max_active_qubits", "shots": 131072, "seconds": 2.578, "detection_rate": 0.0594, "observable_rate": 0.0694, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "symft-mt": {"shots_per_s": 644900.0, "compile_s": 0.0283, "warmup_s": 0.0002, "k_max": 10, "k_name": "symft max_active_qubits", "shots": 2097152, "seconds": 3.252, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.1441, "threads": 12, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-mt|post-off": {"shots_per_s": 483000.0, "compile_s": 0.151, "warmup_s": 0.0021, "k_max": 10, "k_name": "symft max_active_qubits", "shots": 1048576, "seconds": 2.171, "detection_rate": 0.0595, "observable_rate": 0.0687, "suspect": false, "kept": 1.0, "threads": 12, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "xtim-1t": {"shots_per_s": 23570000.0, "compile_s": 0.0401, "warmup_s": 0.0018, "k_max": null, "k_name": null, "shots": 67108864, "seconds": 2.848, "detection_rate": 0.0, "observable_rate": 0.0, "suspect": false, "kept": 0.1439, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-1t|post-off": {"shots_per_s": 6442000.0, "compile_s": 0.0394, "warmup_s": 0.0028, "k_max": null, "k_name": null, "shots": 16777216, "seconds": 2.604, "detection_rate": 0.0595, "observable_rate": 0.0701, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "xtim-mt": {"shots_per_s": 117100000.0, "compile_s": 0.0435, "warmup_s": 0.0022, "k_max": null, "k_name": null, "shots": 143165576, "seconds": 1.222, "detection_rate": 0.0, "observable_rate": 0.0, "suspect": false, "kept": 0.144, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)", "threads": 12}, "xtim-mt|post-off": {"shots_per_s": 52350000.0, "compile_s": 0.0435, "warmup_s": 0.0032, "k_max": null, "k_name": null, "shots": 134217728, "seconds": 2.564, "detection_rate": 0.0596, "observable_rate": 0.0696, "suspect": false, "kept": 1.0, "threads": 12, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "magna-1t": {"shots_per_s": 220900.0, "compile_s": 0.0419, "warmup_s": 0.0003, "k_max": null, "k_name": null, "shots": 524288, "seconds": 2.374, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.1436, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-1t|post-off": {"shots_per_s": 109700.0, "compile_s": 0.0411, "warmup_s": 0.0004, "k_max": null, "k_name": null, "shots": 262144, "seconds": 2.389, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt": {"shots_per_s": 2325000.0, "compile_s": 0.0538, "warmup_s": 0.002, "k_max": null, "k_name": null, "shots": 8388608, "seconds": 3.607, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.144, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt|post-off": {"shots_per_s": 1120000.0, "compile_s": 0.052, "warmup_s": 0.0019, "k_max": null, "k_name": null, "shots": 4194304, "seconds": 3.745, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda": {"shots_per_s": 95790000.0, "compile_s": 0.0492, "warmup_s": 0.284, "k_max": null, "k_name": null, "shots": 268435456, "seconds": 2.802, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.144, "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda|post-off": {"shots_per_s": 81320000.0, "compile_s": 0.0483, "warmup_s": 0.271, "k_max": null, "k_name": null, "shots": 268435456, "seconds": 3.301, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "tsim-metal": {"shots_per_s": 750304088.0715781, "compile_s": 0.28703029098687693, "k_max": 6, "k_name": "active width", "kept": 0.14393327741944492, "device": "metal", "tsim_version": "1.1.0", "threads": null}, "tsim-metal|post-off": {"shots_per_s": 187113590.71123618, "compile_s": 0.2813744589802809, "k_max": 6, "k_name": "active width", "kept": 1.0, "device": "metal", "tsim_version": "1.1.0", "threads": null}}, "papers/2409.17595_magic_state_cultivation/stim/end2end_d5_dsurface15_p0.001.stim": {"tsim-cpu-1t": {"shots_per_s": 859400.0, "compile_s": 9.41, "warmup_s": 0.39, "k_max": 6, "k_name": "tsim largest component width", "shots": 293370, "seconds": 0.3406, "detection_rate": 0.0313, "observable_rate": 0.501, "suspect": false, "kept": 0.05177, "threads": 1, "note": null}, "tsim-cpu-1t|post-off": {"shots_per_s": 446000.0, "compile_s": 9.17, "warmup_s": 0.404, "k_max": 6, "k_name": "tsim largest component width", "shots": 97790, "seconds": 0.2124, "detection_rate": 0.0349, "observable_rate": 0.5, "suspect": false, "kept": 1.0, "threads": 1, "note": null}, "tsim-cpu-mt": {"shots_per_s": 7229000.0, "compile_s": 2.81, "warmup_s": 0.183, "k_max": 6, "k_name": "tsim largest component width", "shots": 2346960, "seconds": 0.28, "detection_rate": 0.0313, "observable_rate": 0.501, "suspect": false, "kept": 0.05193, "threads": 12, "note": null}, "tsim-cpu-mt|post-off": {"shots_per_s": 2580000.0, "compile_s": 2.8, "warmup_s": 0.186, "k_max": 6, "k_name": "tsim largest component width", "shots": 586740, "seconds": 0.2148, "detection_rate": 0.0349, "observable_rate": 0.5, "suspect": false, "kept": 1.0, "threads": 12, "note": null}, "tsim-cuda": {"shots_per_s": 438800000.0, "compile_s": 10.7, "warmup_s": 4.86, "k_max": 6, "k_name": "tsim largest component width", "shots": 71875650, "seconds": 0.158, "detection_rate": 0.0313, "observable_rate": 0.501, "suspect": false, "kept": 0.05185, "threads": null, "note": null}, "tsim-cuda|post-off": {"shots_per_s": 118800000.0, "compile_s": 10.6, "warmup_s": 4.66, "k_max": 6, "k_name": "tsim largest component width", "shots": 2542540, "seconds": 0.02116, "detection_rate": 0.0349, "observable_rate": 0.5, "suspect": false, "kept": 1.0, "threads": null, "note": null}, "clifft-1t": {"shots_per_s": 67270.0, "compile_s": 1.32, "warmup_s": 0.311, "k_max": 10, "k_name": "clifft peak_active_width", "shots": 262144, "seconds": 3.897, "detection_rate": null, "observable_rate": 0.503, "suspect": false, "kept": 0.05232, "threads": 1, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-1t|post-off": {"shots_per_s": 60080.0, "compile_s": 1.32, "warmup_s": 0.317, "k_max": 10, "k_name": "clifft peak_active_width", "shots": 131072, "seconds": 2.182, "detection_rate": 0.0349, "observable_rate": 0.5, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "clifft-mt": {"shots_per_s": 659400.0, "compile_s": 1.34, "warmup_s": 0.258, "k_max": 10, "k_name": "clifft peak_active_width", "shots": 2097152, "seconds": 3.18, "detection_rate": null, "observable_rate": 0.503, "suspect": false, "kept": 0.05189, "threads": 12, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-mt|post-off": {"shots_per_s": 405300.0, "compile_s": 1.34, "warmup_s": 0.261, "k_max": 10, "k_name": "clifft peak_active_width", "shots": 382932, "seconds": 0.9449, "detection_rate": 0.0349, "observable_rate": 0.499, "suspect": false, "kept": 1.0, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up", "threads": 12}, "symft-1t": {"shots_per_s": 87650.0, "compile_s": 1.38, "warmup_s": 0.0009, "k_max": 10, "k_name": "symft max_active_qubits", "shots": 262144, "seconds": 2.991, "detection_rate": null, "observable_rate": null, "suspect": null, "kept": 0.0, "post_note": "SymFT postselects all detectors or none: used all 2744 (manifest: 135)", "threads": 1, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-1t|post-off": {"shots_per_s": 17580.0, "compile_s": 0.304, "warmup_s": 0.0014, "k_max": 10, "k_name": "symft max_active_qubits", "shots": 65536, "seconds": 3.729, "detection_rate": 0.0349, "observable_rate": 0.5, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "symft-mt": {"shots_per_s": 356500.0, "compile_s": 1.46, "warmup_s": 0.0012, "k_max": 10, "k_name": "symft max_active_qubits", "shots": 1048576, "seconds": 2.942, "detection_rate": null, "observable_rate": null, "suspect": null, "kept": 0.0, "post_note": "SymFT postselects all detectors or none: used all 2744 (manifest: 135)", "threads": 12, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-mt|post-off": {"shots_per_s": 62030.0, "compile_s": 4.16, "warmup_s": 0.008, "k_max": 10, "k_name": "symft max_active_qubits", "shots": 131072, "seconds": 2.113, "detection_rate": 0.0349, "observable_rate": 0.5, "suspect": false, "kept": 1.0, "threads": 12, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "xtim-1t": {"shots_per_s": 1401000.0, "compile_s": 2.08, "warmup_s": 0.132, "k_max": null, "k_name": null, "shots": 4194304, "seconds": 2.994, "detection_rate": 0.0313, "observable_rate": 0.502, "suspect": false, "kept": 0.05183, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-1t|post-off": {"shots_per_s": 1061000.0, "compile_s": 2.09, "warmup_s": 2.14, "k_max": null, "k_name": null, "shots": 2097152, "seconds": 1.977, "detection_rate": 0.0349, "observable_rate": 0.5, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "xtim-mt": {"shots_per_s": 7401000.0, "compile_s": 2.13, "warmup_s": 0.138, "k_max": null, "k_name": null, "shots": 6242685, "seconds": 0.8435, "detection_rate": 0.0313, "observable_rate": 0.501, "suspect": false, "kept": 0.05189, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)", "threads": 12}, "xtim-mt|post-off": {"shots_per_s": 6664000.0, "compile_s": 2.12, "warmup_s": 2.17, "k_max": null, "k_name": null, "shots": 6242685, "seconds": 0.9368, "detection_rate": 0.0349, "observable_rate": 0.499, "suspect": false, "kept": 1.0, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)", "threads": 12}, "magna-1t": {"shots_per_s": 25540.0, "compile_s": 0.511, "warmup_s": 0.0021, "k_max": null, "k_name": null, "shots": 65536, "seconds": 2.566, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.05196, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-1t|post-off": {"shots_per_s": 16280.0, "compile_s": 0.511, "warmup_s": 0.0027, "k_max": null, "k_name": null, "shots": 32768, "seconds": 2.013, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt": {"shots_per_s": 255500.0, "compile_s": 0.557, "warmup_s": 0.0047, "k_max": null, "k_name": null, "shots": 524288, "seconds": 2.052, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.05211, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt|post-off": {"shots_per_s": 152100.0, "compile_s": 0.551, "warmup_s": 0.0053, "k_max": null, "k_name": null, "shots": 524288, "seconds": 3.448, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda": {"error": "unsupported: CUDA non-Clifford histogram dimension exceeds 12; no CPU fallback", "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda|post-off": {"error": "unsupported: CUDA non-Clifford histogram dimension exceeds 12; no CPU fallback", "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "tsim-metal": {"shots_per_s": 319107390.99616957, "compile_s": 2.9589219159679487, "k_max": 6, "k_name": "active width", "kept": 0.05188224483856792, "device": "metal", "tsim_version": "1.1.0", "threads": null}, "tsim-metal|post-off": {"shots_per_s": 73266142.00542136, "compile_s": 2.9012799999909475, "k_max": 6, "k_name": "active width", "kept": 1.0, "device": "metal", "tsim_version": "1.1.0", "threads": null}}, "papers/2509.05212_fold_transversal_cultivation/stim/fold-d5_native_T_p0.001.stim": {"tsim-cpu-1t": {"shots_per_s": 4298000.0, "compile_s": 1.02, "warmup_s": 0.442, "k_max": 8, "k_name": "tsim largest component width", "shots": 2097152, "seconds": 0.4835, "detection_rate": 0.0, "observable_rate": null, "suspect": false, "kept": 0.16, "threads": 1, "note": null}, "tsim-cpu-1t|post-off": {"shots_per_s": 90170.0, "compile_s": 1.03, "warmup_s": 0.442, "k_max": 8, "k_name": "tsim largest component width", "shots": 57254, "seconds": 0.6334, "detection_rate": 0.0625, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 1, "note": null}, "tsim-cpu-mt": {"shots_per_s": 33190000.0, "compile_s": 0.529, "warmup_s": 0.158, "k_max": 8, "k_name": "tsim largest component width", "shots": 9099504, "seconds": 0.2734, "detection_rate": 0.0, "observable_rate": null, "suspect": false, "kept": 0.1599, "threads": 12, "note": null}, "tsim-cpu-mt|post-off": {"shots_per_s": 262600.0, "compile_s": 0.537, "warmup_s": 0.126, "k_max": 8, "k_name": "tsim largest component width", "shots": 175499, "seconds": 0.6657, "detection_rate": 0.0625, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 12, "note": null}, "tsim-cuda": {"shots_per_s": 299800000.0, "compile_s": 1.86, "warmup_s": 98.1, "k_max": 8, "k_name": "tsim largest component width", "shots": 86445288, "seconds": 0.2857, "detection_rate": 0.0, "observable_rate": null, "suspect": false, "kept": 0.16, "threads": null, "note": null}, "tsim-cuda|post-off": {"shots_per_s": 82690000.0, "compile_s": 1.86, "warmup_s": 94.1, "k_max": 8, "k_name": "tsim largest component width", "shots": 18199008, "seconds": 0.2168, "detection_rate": 0.0625, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": null, "note": null}, "clifft-1t": {"error": "timeout (300 s)", "threads": 1, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-1t|post-off": {"error": "timeout (300 s)", "threads": 1, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "clifft-mt": {"shots_per_s": 35.14, "compile_s": 0.111, "warmup_s": 140.0, "k_max": 22, "k_name": "clifft peak_active_width", "shots": 128, "seconds": 3.643, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.1745, "threads": 12, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-mt|post-off": {"error": "timeout (300 s)", "threads": 12, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "symft-1t": {"error": "unsupported: Stim operation not supported: CCZ", "threads": 1, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-1t|post-off": {"error": "unsupported: Stim operation not supported: CCZ", "threads": 1, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "symft-mt": {"error": "unsupported: Stim operation not supported: CCZ", "threads": 12, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-mt|post-off": {"error": "unsupported: Stim operation not supported: CCZ", "threads": 12, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "xtim-1t": {"shots_per_s": 22210000.0, "compile_s": 0.127, "warmup_s": 0.0033, "k_max": null, "k_name": null, "shots": 67108864, "seconds": 3.022, "detection_rate": 0.0, "observable_rate": null, "suspect": false, "kept": 0.16, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-1t|post-off": {"shots_per_s": 2957000.0, "compile_s": 0.13, "warmup_s": 0.0044, "k_max": null, "k_name": null, "shots": 8388608, "seconds": 2.837, "detection_rate": 0.0625, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "xtim-mt": {"shots_per_s": 119300000.0, "compile_s": 0.133, "warmup_s": 0.0038, "k_max": null, "k_name": null, "shots": 143165576, "seconds": 1.2, "detection_rate": 0.0, "observable_rate": null, "suspect": false, "kept": 0.16, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)", "threads": 12}, "xtim-mt|post-off": {"shots_per_s": 33610000.0, "compile_s": 0.135, "warmup_s": 0.0048, "k_max": null, "k_name": null, "shots": 67108864, "seconds": 1.997, "detection_rate": 0.0627, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 12, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "magna-1t": {"shots_per_s": 236000.0, "compile_s": 0.187, "warmup_s": 0.0005, "k_max": null, "k_name": null, "shots": 524288, "seconds": 2.222, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.1597, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-1t|post-off": {"shots_per_s": 155600.0, "compile_s": 0.185, "warmup_s": 0.0005, "k_max": null, "k_name": null, "shots": 524288, "seconds": 3.368, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt": {"shots_per_s": 2507000.0, "compile_s": 0.202, "warmup_s": 0.0021, "k_max": null, "k_name": null, "shots": 8388608, "seconds": 3.347, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.16, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt|post-off": {"shots_per_s": 1551000.0, "compile_s": 0.2, "warmup_s": 0.0024, "k_max": null, "k_name": null, "shots": 4194304, "seconds": 2.704, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda": {"shots_per_s": 40440000.0, "compile_s": 0.201, "warmup_s": 0.438, "k_max": null, "k_name": null, "shots": 134217728, "seconds": 3.319, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.16, "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda|post-off": {"shots_per_s": 39240000.0, "compile_s": 0.197, "warmup_s": 0.382, "k_max": null, "k_name": null, "shots": 134217728, "seconds": 3.42, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "tsim-metal": {"shots_per_s": 56884127.15127998, "compile_s": 0.5393845000071451, "k_max": 8, "k_name": "active width", "kept": 0.1600135298259336, "device": "metal", "tsim_version": "1.1.0", "threads": null}, "tsim-metal|post-off": {"shots_per_s": 12984700.887428828, "compile_s": 0.5216503329575062, "k_max": 8, "k_name": "active width", "kept": 1.0, "device": "metal", "tsim_version": "1.1.0", "threads": null}}, "papers/2503.18657_rp2_cultivation/stim/rp_3_rp_5_T_cult.stim": {"tsim-cpu-1t": {"shots_per_s": 6769000.0, "compile_s": 0.609, "warmup_s": 0.447, "k_max": 10, "k_name": "tsim largest component width", "shots": 2018311, "seconds": 0.2975, "detection_rate": 0.0, "observable_rate": 0.146, "suspect": false, "kept": 0.09472, "threads": 1, "note": null}, "tsim-cpu-1t|post-off": {"shots_per_s": 15740.0, "compile_s": 0.612, "warmup_s": 0.478, "k_max": 10, "k_name": "tsim largest component width", "shots": 8192, "seconds": 0.5199, "detection_rate": 0.077, "observable_rate": 0.403, "suspect": false, "kept": 1.0, "threads": 1, "note": null}, "tsim-cpu-mt": {"shots_per_s": 49060000.0, "compile_s": 0.203, "warmup_s": 0.18, "k_max": 10, "k_name": "tsim largest component width", "shots": 12109866, "seconds": 0.2208, "detection_rate": 0.0, "observable_rate": 0.146, "suspect": false, "kept": 0.09448, "threads": 12, "note": null}, "tsim-cpu-mt|post-off": {"shots_per_s": 43680.0, "compile_s": 0.197, "warmup_s": 0.19, "k_max": 10, "k_name": "tsim largest component width", "shots": 56934, "seconds": 1.296, "detection_rate": 0.077, "observable_rate": 0.403, "suspect": false, "kept": 1.0, "threads": 12, "note": null}, "tsim-cuda": {"shots_per_s": 273000000.0, "compile_s": 1.38, "warmup_s": 0.297, "k_max": 10, "k_name": "tsim largest component width", "shots": 74677507, "seconds": 0.2734, "detection_rate": 0.0, "observable_rate": 0.146, "suspect": false, "kept": 0.09451, "threads": null, "note": null}, "tsim-cuda|post-off": {"shots_per_s": 44300000.0, "compile_s": 1.4, "warmup_s": 11.2, "k_max": 10, "k_name": "tsim largest component width", "shots": 12109866, "seconds": 0.2734, "detection_rate": 0.077, "observable_rate": 0.403, "suspect": false, "kept": 1.0, "threads": null, "note": null}, "clifft-1t": {"shots_per_s": 5228.0, "compile_s": 0.0505, "warmup_s": 0.77, "k_max": 18, "k_name": "clifft peak_active_width", "shots": 16384, "seconds": 3.134, "detection_rate": null, "observable_rate": 0.146, "suspect": false, "kept": 0.09465, "threads": 1, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-1t|post-off": {"shots_per_s": 1147.0, "compile_s": 0.0412, "warmup_s": 3.59, "k_max": 18, "k_name": "clifft peak_active_width", "shots": 4096, "seconds": 3.572, "detection_rate": 0.0772, "observable_rate": 0.404, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "clifft-mt": {"shots_per_s": 41210.0, "compile_s": 0.0529, "warmup_s": 0.11, "k_max": 18, "k_name": "clifft peak_active_width", "shots": 131072, "seconds": 3.18, "detection_rate": null, "observable_rate": 0.145, "suspect": false, "kept": 0.09454, "threads": 12, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-mt|post-off": {"shots_per_s": 9139.0, "compile_s": 0.045, "warmup_s": 0.472, "k_max": 18, "k_name": "clifft peak_active_width", "shots": 32768, "seconds": 3.586, "detection_rate": 0.0768, "observable_rate": 0.401, "suspect": false, "kept": 1.0, "threads": 12, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "symft-1t": {"shots_per_s": 1545.0, "compile_s": 0.0207, "warmup_s": 0.0091, "k_max": 18, "k_name": "symft max_active_qubits", "shots": 4096, "seconds": 2.65, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.09692, "threads": 1, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-1t|post-off": {"shots_per_s": 401.2, "compile_s": 0.0343, "warmup_s": 0.0403, "k_max": 18, "k_name": "symft max_active_qubits", "shots": 1024, "seconds": 2.553, "detection_rate": 0.0772, "observable_rate": 0.4, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "symft-mt": {"shots_per_s": 9999.0, "compile_s": 0.0381, "warmup_s": 0.0096, "k_max": 18, "k_name": "symft max_active_qubits", "shots": 32768, "seconds": 3.277, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.09569, "threads": 12, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-mt|post-off": {"shots_per_s": 3485.0, "compile_s": 0.35, "warmup_s": 0.0108, "k_max": 18, "k_name": "symft max_active_qubits", "shots": 8192, "seconds": 2.35, "detection_rate": 0.0773, "observable_rate": 0.399, "suspect": false, "kept": 1.0, "threads": 12, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "xtim-1t": {"shots_per_s": 17570000.0, "compile_s": 0.0474, "warmup_s": 0.0023, "k_max": null, "k_name": null, "shots": 67108864, "seconds": 3.819, "detection_rate": 0.0, "observable_rate": 0.147, "suspect": false, "kept": 0.09453, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-1t|post-off": {"shots_per_s": 1954000.0, "compile_s": 0.0472, "warmup_s": 0.0077, "k_max": null, "k_name": null, "shots": 4194304, "seconds": 2.147, "detection_rate": 0.0771, "observable_rate": 0.402, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "xtim-mt": {"shots_per_s": 101500000.0, "compile_s": 0.0503, "warmup_s": 0.0026, "k_max": null, "k_name": null, "shots": 119304647, "seconds": 1.175, "detection_rate": 0.0, "observable_rate": 0.145, "suspect": false, "kept": 0.09452, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)", "threads": 12}, "xtim-mt|post-off": {"shots_per_s": 3567000.0, "compile_s": 0.0492, "warmup_s": 0.0081, "k_max": null, "k_name": null, "shots": 8388608, "seconds": 2.352, "detection_rate": 0.0771, "observable_rate": 0.403, "suspect": false, "kept": 1.0, "threads": 12, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "magna-1t": {"shots_per_s": 156600.0, "compile_s": 0.0458, "warmup_s": 0.0008, "k_max": null, "k_name": null, "shots": 524288, "seconds": 3.347, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.09429, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-1t|post-off": {"shots_per_s": 49640.0, "compile_s": 0.0439, "warmup_s": 0.0006, "k_max": null, "k_name": null, "shots": 131072, "seconds": 2.64, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt": {"shots_per_s": 1559000.0, "compile_s": 0.0589, "warmup_s": 0.0023, "k_max": null, "k_name": null, "shots": 4194304, "seconds": 2.69, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.09451, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt|post-off": {"shots_per_s": 472300.0, "compile_s": 0.057, "warmup_s": 0.0019, "k_max": null, "k_name": null, "shots": 1048576, "seconds": 2.22, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda": {"error": "unsupported: CUDA non-Clifford histogram dimension exceeds 12; no CPU fallback", "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda|post-off": {"error": "unsupported: CUDA non-Clifford histogram dimension exceeds 12; no CPU fallback", "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "tsim-metal": {"shots_per_s": 45182413.96007148, "compile_s": 0.4013145420467481, "k_max": 10, "k_name": "active width", "kept": 0.09458618133627915, "device": "metal", "tsim_version": "1.1.0", "threads": null}, "tsim-metal|post-off": {"shots_per_s": 6392211.317683905, "compile_s": 0.39338625001255423, "k_max": 10, "k_name": "active width", "kept": 1.0, "device": "metal", "tsim_version": "1.1.0", "threads": null}}, "papers/2505.13587_correlated_decoding_distillation/stim/distillation_15to1_T_d5_p0.001.stim": {"tsim-cpu-1t": {"shots_per_s": 1524000.0, "compile_s": 3.46, "warmup_s": 0.442, "k_max": 4, "k_name": "tsim largest component width", "shots": 480200, "seconds": 0.3131, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 1, "note": null}, "tsim-cpu-1t|post-off": {"shots_per_s": 1524000.0, "compile_s": 3.46, "warmup_s": 0.442, "k_max": 4, "k_name": "tsim largest component width", "shots": 480200, "seconds": 0.3131, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 1, "note": null}, "tsim-cpu-mt": {"shots_per_s": 7026000.0, "compile_s": 1.08, "warmup_s": 0.164, "k_max": 4, "k_name": "tsim largest component width", "shots": 1380575, "seconds": 0.1948, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 12, "note": null}, "tsim-cpu-mt|post-off": {"shots_per_s": 7026000.0, "compile_s": 1.08, "warmup_s": 0.164, "k_max": 4, "k_name": "tsim largest component width", "shots": 1380575, "seconds": 0.1948, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 12, "note": null}, "tsim-cuda": {"shots_per_s": 74600000.0, "compile_s": 4.87, "warmup_s": 1.8, "k_max": 4, "k_name": "tsim largest component width", "shots": 3121300, "seconds": 0.04088, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": null, "note": null}, "tsim-cuda|post-off": {"shots_per_s": 74600000.0, "compile_s": 4.87, "warmup_s": 1.8, "k_max": 4, "k_name": "tsim largest component width", "shots": 3121300, "seconds": 0.04088, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": null, "note": null}, "clifft-1t": {"shots_per_s": 291800.0, "compile_s": 3.42, "warmup_s": 0.265, "k_max": 4, "k_name": "clifft peak_active_width", "shots": 282266, "seconds": 0.9673, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up", "threads": 1}, "clifft-1t|post-off": {"shots_per_s": 291800.0, "compile_s": 3.42, "warmup_s": 0.265, "k_max": 4, "k_name": "clifft peak_active_width", "shots": 282266, "seconds": 0.9673, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up", "threads": 1}, "clifft-mt": {"shots_per_s": 521900.0, "compile_s": 3.4, "warmup_s": 0.0135, "k_max": 4, "k_name": "clifft peak_active_width", "shots": 282266, "seconds": 0.5408, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up", "threads": 12}, "clifft-mt|post-off": {"shots_per_s": 521900.0, "compile_s": 3.4, "warmup_s": 0.0135, "k_max": 4, "k_name": "clifft peak_active_width", "shots": 282266, "seconds": 0.5408, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up", "threads": 12}, "symft-1t": {"shots_per_s": 3766.0, "compile_s": 0.113, "warmup_s": 0.0044, "k_max": 15, "k_name": "symft max_active_qubits", "shots": 8192, "seconds": 2.175, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 1, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-1t|post-off": {"shots_per_s": 3766.0, "compile_s": 0.113, "warmup_s": 0.0044, "k_max": 15, "k_name": "symft max_active_qubits", "shots": 8192, "seconds": 2.175, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 1, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "symft-mt": {"shots_per_s": 17300.0, "compile_s": 1.39, "warmup_s": 0.0085, "k_max": 15, "k_name": "symft max_active_qubits", "shots": 65536, "seconds": 3.788, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 12, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-mt|post-off": {"shots_per_s": 17300.0, "compile_s": 1.39, "warmup_s": 0.0085, "k_max": 15, "k_name": "symft max_active_qubits", "shots": 65536, "seconds": 3.788, "detection_rate": 0.0121, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 12, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "xtim-1t": {"error": "timeout (300 s)", "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)", "threads": 1}, "xtim-1t|post-off": {"error": "timeout (300 s)", "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)", "threads": 1}, "xtim-mt": {"error": "timeout (300 s)", "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)", "threads": 12}, "xtim-mt|post-off": {"error": "timeout (300 s)", "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)", "threads": 12}, "magna-1t": {"shots_per_s": 115500.0, "compile_s": 0.225, "warmup_s": 0.0009, "k_max": null, "k_name": null, "shots": 262144, "seconds": 2.27, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-1t|post-off": {"shots_per_s": 115500.0, "compile_s": 0.225, "warmup_s": 0.0009, "k_max": null, "k_name": null, "shots": 262144, "seconds": 2.27, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt": {"shots_per_s": 1146000.0, "compile_s": 0.251, "warmup_s": 0.0029, "k_max": null, "k_name": null, "shots": 4194304, "seconds": 3.662, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt|post-off": {"shots_per_s": 1146000.0, "compile_s": 0.251, "warmup_s": 0.0029, "k_max": null, "k_name": null, "shots": 4194304, "seconds": 3.662, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda": {"shots_per_s": 928400.0, "compile_s": 0.407, "warmup_s": 0.394, "k_max": null, "k_name": null, "shots": 2097152, "seconds": 2.259, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda|post-off": {"shots_per_s": 928400.0, "compile_s": 0.407, "warmup_s": 0.394, "k_max": null, "k_name": null, "shots": 2097152, "seconds": 2.259, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "tsim-metal": {"shots_per_s": 45222435.02245798, "compile_s": 1.423642459034454, "k_max": 4, "k_name": "active width", "kept": 1.0, "device": "metal", "tsim_version": "1.1.0", "threads": null}, "tsim-metal|post-off": {"shots_per_s": 49483982.47261249, "compile_s": 1.365232208976522, "k_max": 4, "k_name": "active width", "kept": 1.0, "device": "metal", "tsim_version": "1.1.0", "threads": null}}, "papers/2610.06811_merlin/stim/distillation_bh10_p0.001.stim": {"tsim-cpu-1t": {"shots_per_s": 47970000.0, "compile_s": 0.0815, "warmup_s": 0.45, "k_max": 4, "k_name": "tsim largest component width", "shots": 21192270, "seconds": 0.3494, "detection_rate": 0.0, "observable_rate": 2.85e-05, "suspect": false, "kept": 0.9629, "threads": 1, "note": null}, "tsim-cpu-1t|post-off": {"shots_per_s": 78660000.0, "compile_s": 0.0812, "warmup_s": 0.46, "k_max": 4, "k_name": "tsim largest component width", "shots": 35320450, "seconds": 0.3312, "detection_rate": 0.00197, "observable_rate": 0.00688, "suspect": false, "kept": 1.0, "threads": 1, "note": null}, "tsim-cpu-mt": {"shots_per_s": 317300000.0, "compile_s": 0.0262, "warmup_s": 0.154, "k_max": 4, "k_name": "tsim largest component width", "shots": 84769080, "seconds": 0.2548, "detection_rate": 0.0, "observable_rate": 2.85e-05, "suspect": false, "kept": 0.9628, "threads": 12, "note": null}, "tsim-cpu-mt|post-off": {"shots_per_s": 696900000.0, "compile_s": 0.0259, "warmup_s": 0.177, "k_max": 4, "k_name": "tsim largest component width", "shots": 134217710, "seconds": 0.188, "detection_rate": 0.00197, "observable_rate": 0.00688, "suspect": false, "kept": 1.0, "threads": 12, "note": null}, "tsim-cuda": {"shots_per_s": 8305000000.0, "compile_s": 0.599, "warmup_s": 0.404, "k_max": 4, "k_name": "tsim largest component width", "shots": 211922700, "seconds": 0.02477, "detection_rate": 0.0, "observable_rate": 2.85e-05, "suspect": false, "kept": 0.9628, "threads": null, "note": null}, "tsim-cuda|post-off": {"shots_per_s": 8482000000.0, "compile_s": 0.695, "warmup_s": 2.12, "k_max": 4, "k_name": "tsim largest component width", "shots": 176602250, "seconds": 0.02081, "detection_rate": 0.00197, "observable_rate": 0.00688, "suspect": false, "kept": 1.0, "threads": null, "note": null}, "clifft-1t": {"shots_per_s": 577600000.0, "compile_s": 0.0056, "warmup_s": 0.25, "k_max": 0, "k_name": "clifft peak_active_width", "shots": 2147483648, "seconds": 3.718, "detection_rate": null, "observable_rate": 3.14e-05, "suspect": false, "kept": 0.9628, "threads": 1, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-1t|post-off": {"shots_per_s": 44530000.0, "compile_s": 0.0055, "warmup_s": 0.25, "k_max": 0, "k_name": "clifft peak_active_width", "shots": 28256363, "seconds": 0.6346, "detection_rate": 0.00196, "observable_rate": 0.00683, "suspect": false, "kept": 1.0, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up", "threads": 1}, "clifft-mt": {"shots_per_s": 5789000000.0, "compile_s": 0.0061, "warmup_s": 0.25, "k_max": 0, "k_name": "clifft peak_active_width", "shots": 17179869184, "seconds": 2.968, "detection_rate": null, "observable_rate": 3.14e-05, "suspect": false, "kept": 0.9628, "threads": 12, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-mt|post-off": {"shots_per_s": 71150000.0, "compile_s": 0.0058, "warmup_s": 0.25, "k_max": 0, "k_name": "clifft peak_active_width", "shots": 28256363, "seconds": 0.3971, "detection_rate": 0.00198, "observable_rate": 0.00689, "suspect": false, "kept": 1.0, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up", "threads": 12}, "symft-1t": {"shots_per_s": 12320.0, "compile_s": 0.0014, "warmup_s": 0.0013, "k_max": 13, "k_name": "symft max_active_qubits", "shots": 32768, "seconds": 2.66, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.9626, "threads": 1, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-1t|post-off": {"shots_per_s": 34200.0, "compile_s": 0.0067, "warmup_s": 0.0006, "k_max": 13, "k_name": "symft max_active_qubits", "shots": 131072, "seconds": 3.833, "detection_rate": 0.00193, "observable_rate": 0.00696, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "symft-mt": {"shots_per_s": 127000.0, "compile_s": 0.0036, "warmup_s": 0.0014, "k_max": 13, "k_name": "symft max_active_qubits", "shots": 262144, "seconds": 2.063, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.9629, "threads": 12, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-mt|post-off": {"shots_per_s": 338800.0, "compile_s": 0.0144, "warmup_s": 0.0021, "k_max": 13, "k_name": "symft max_active_qubits", "shots": 1048576, "seconds": 3.095, "detection_rate": 0.00196, "observable_rate": 0.00693, "suspect": false, "kept": 1.0, "threads": 12, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "xtim-1t": {"shots_per_s": 87750000.0, "compile_s": 0.0173, "warmup_s": 0.0003, "k_max": null, "k_name": null, "shots": 268435456, "seconds": 3.059, "detection_rate": 0.0, "observable_rate": 3.58e-05, "suspect": false, "kept": 0.9628, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-1t|post-off": {"shots_per_s": 88770000.0, "compile_s": 0.0173, "warmup_s": 0.0003, "k_max": null, "k_name": null, "shots": 268435456, "seconds": 3.024, "detection_rate": 0.00196, "observable_rate": 0.00688, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "xtim-mt": {"shots_per_s": 174600000.0, "compile_s": 0.0181, "warmup_s": 0.0005, "k_max": null, "k_name": null, "shots": 357913941, "seconds": 2.05, "detection_rate": 0.0, "observable_rate": 3.2e-05, "suspect": false, "kept": 0.9628, "threads": 12, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-mt|post-off": {"shots_per_s": 424600000.0, "compile_s": 0.018, "warmup_s": 0.0005, "k_max": null, "k_name": null, "shots": 357913941, "seconds": 0.8428, "detection_rate": 0.00196, "observable_rate": 0.00684, "suspect": false, "kept": 1.0, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)", "threads": 12}, "magna-1t": {"shots_per_s": 160400.0, "compile_s": 0.0372, "warmup_s": 0.0003, "k_max": null, "k_name": null, "shots": 524288, "seconds": 3.269, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.9628, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-1t|post-off": {"shots_per_s": 170600.0, "compile_s": 0.0365, "warmup_s": 0.0003, "k_max": null, "k_name": null, "shots": 524288, "seconds": 3.074, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt": {"shots_per_s": 1710000.0, "compile_s": 0.0492, "warmup_s": 0.0014, "k_max": null, "k_name": null, "shots": 4194304, "seconds": 2.453, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.9628, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt|post-off": {"shots_per_s": 1747000.0, "compile_s": 0.0485, "warmup_s": 0.0016, "k_max": null, "k_name": null, "shots": 4194304, "seconds": 2.401, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda": {"shots_per_s": 325000000.0, "compile_s": 0.04, "warmup_s": 0.489, "k_max": null, "k_name": null, "shots": 1073741824, "seconds": 3.304, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.9628, "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda|post-off": {"shots_per_s": 433700000.0, "compile_s": 0.0387, "warmup_s": 0.448, "k_max": null, "k_name": null, "shots": 1073741824, "seconds": 2.476, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "tsim-metal": {"shots_per_s": 1175772333.0648265, "compile_s": 0.1608697499614209, "k_max": 4, "k_name": "active width", "kept": 0.9628236206656337, "device": "metal", "tsim_version": "1.1.0", "threads": null}, "tsim-metal|post-off": {"shots_per_s": 1214166538.954176, "compile_s": 0.15629904199158773, "k_max": 4, "k_name": "active width", "kept": 1.0, "device": "metal", "tsim_version": "1.1.0", "threads": null}}, "papers/2610.22315_magna/stim/bh100-T.stim": {"tsim-cpu-1t": {"shots_per_s": 303500.0, "compile_s": 0.734, "warmup_s": 0.467, "k_max": 3, "k_name": "tsim largest component width", "shots": 131072, "seconds": 0.4308, "detection_rate": 0.0, "observable_rate": null, "suspect": false, "kept": 0.7463, "threads": 1, "note": null}, "tsim-cpu-1t|post-off": {"shots_per_s": 300300.0, "compile_s": 0.736, "warmup_s": 0.451, "k_max": 3, "k_name": "tsim largest component width", "shots": 131072, "seconds": 0.4332, "detection_rate": 0.114, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 1, "note": null}, "tsim-cpu-mt": {"shots_per_s": 1150000.0, "compile_s": 0.577, "warmup_s": 0.158, "k_max": 3, "k_name": "tsim largest component width", "shots": 1048576, "seconds": 0.624, "detection_rate": 0.0, "observable_rate": null, "suspect": false, "kept": 0.7466, "threads": 12, "note": null}, "tsim-cpu-mt|post-off": {"shots_per_s": 1186000.0, "compile_s": 0.475, "warmup_s": 0.15, "k_max": 3, "k_name": "tsim largest component width", "shots": 899495, "seconds": 0.5756, "detection_rate": 0.114, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 12, "note": null}, "tsim-cuda": {"shots_per_s": 1625000000.0, "compile_s": 1.33, "warmup_s": 6.42, "k_max": 3, "k_name": "tsim largest component width", "shots": 357913940, "seconds": 0.2191, "detection_rate": 0.0, "observable_rate": null, "suspect": false, "kept": 0.7466, "threads": null, "note": null}, "tsim-cuda|post-off": {"shots_per_s": 1659000000.0, "compile_s": 1.32, "warmup_s": 6.44, "k_max": 3, "k_name": "tsim largest component width", "shots": 357913940, "seconds": 0.2145, "detection_rate": 0.114, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": null, "note": null}, "clifft-1t": {"error": "unsupported: active width too large: sampling planner active width would reach 60, but the dense-state limi...", "threads": 1, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-1t|post-off": {"error": "unsupported: active width too large: sampling planner active width would reach 60, but the dense-state limi...", "threads": 1, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "clifft-mt": {"error": "unsupported: active width too large: sampling planner active width would reach 60, but the dense-state limi...", "threads": 12, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-mt|post-off": {"error": "unsupported: active width too large: sampling planner active width would reach 60, but the dense-state limi...", "threads": 12, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "symft-1t": {"error": "unsupported: active width too large: active qubit count is too large for machine basis indices", "threads": 1, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-1t|post-off": {"error": "unsupported: active width too large: active qubit count is too large for machine basis indices", "threads": 1, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "symft-mt": {"error": "unsupported: active width too large: active qubit count is too large for machine basis indices", "threads": 12, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-mt|post-off": {"error": "unsupported: active width too large: active qubit count is too large for machine basis indices", "threads": 12, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "xtim-1t": {"error": "unsupported: magic branch rank 408 > xtim engine limit 30 (chi <= 2^30 stabilizer branches)", "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-1t|post-off": {"error": "unsupported: magic branch rank 408 > xtim engine limit 30 (chi <= 2^30 stabilizer branches)", "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "xtim-mt": {"error": "unsupported: magic branch rank 408 > xtim engine limit 30 (chi <= 2^30 stabilizer branches)", "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)", "threads": 12}, "xtim-mt|post-off": {"error": "unsupported: magic branch rank 408 > xtim engine limit 30 (chi <= 2^30 stabilizer branches)", "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)", "threads": 12}, "magna-1t": {"shots_per_s": 62530.0, "compile_s": 0.178, "warmup_s": 0.0007, "k_max": null, "k_name": null, "shots": 131072, "seconds": 2.096, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.7465, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-1t|post-off": {"shots_per_s": 61890.0, "compile_s": 0.173, "warmup_s": 0.0007, "k_max": null, "k_name": null, "shots": 131072, "seconds": 2.118, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt": {"shots_per_s": 635200.0, "compile_s": 0.197, "warmup_s": 0.0023, "k_max": null, "k_name": null, "shots": 2097152, "seconds": 3.302, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.7466, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt|post-off": {"shots_per_s": 616200.0, "compile_s": 0.193, "warmup_s": 0.0027, "k_max": null, "k_name": null, "shots": 2097152, "seconds": 3.403, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda": {"shots_per_s": 5941000.0, "compile_s": 0.195, "warmup_s": 0.397, "k_max": null, "k_name": null, "shots": 16777216, "seconds": 2.824, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.7467, "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda|post-off": {"shots_per_s": 6638000.0, "compile_s": 0.187, "warmup_s": 0.36, "k_max": null, "k_name": null, "shots": 16777216, "seconds": 2.527, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "tsim-metal": {"shots_per_s": 299907876.04751575, "compile_s": 0.45000762498239055, "k_max": 3, "k_name": "active width", "kept": 0.7465322010525623, "device": "metal", "tsim_version": "1.1.0", "threads": null}, "tsim-metal|post-off": {"shots_per_s": 308766523.8220628, "compile_s": 0.4664782090112567, "k_max": 3, "k_name": "active width", "kept": 1.0, "device": "metal", "tsim_version": "1.1.0", "threads": null}}, "papers/2610.06811_merlin/stim/code_switching_bt27_p0.001.stim": {"tsim-cpu-1t": {"shots_per_s": 0.2301, "compile_s": 0.159, "warmup_s": 81.0, "k_max": 26, "k_name": "tsim largest component width", "shots": 16, "seconds": 69.44, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.9688, "note": null, "threads": 1}, "tsim-cpu-1t|post-off": {"error": "timeout (300 s)", "threads": 1, "note": null}, "tsim-cpu-mt": {"error": "timeout (300 s)", "threads": 12, "note": null}, "tsim-cpu-mt|post-off": {"error": "timeout (300 s)", "threads": 12, "note": null}, "tsim-cuda": {"error": "unsupported (k_max > 11): Tsim k_max 26", "threads": null, "note": null}, "tsim-cuda|post-off": {"error": "unsupported (k_max > 11): Tsim k_max 26", "threads": null, "note": null}, "clifft-1t": {"error": "timeout (300 s)", "threads": 1, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-1t|post-off": {"error": "timeout (300 s)", "threads": 1, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "clifft-mt": {"error": "timeout (300 s)", "threads": 12, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-mt|post-off": {"error": "timeout (300 s)", "threads": 12, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "symft-1t": {"error": "out of memory", "threads": 1, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-1t|post-off": {"error": "out of memory", "threads": 1, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "symft-mt": {"error": "out of memory", "threads": 12, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-mt|post-off": {"error": "out of memory", "threads": 12, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "xtim-1t": {"shots_per_s": 72670000.0, "compile_s": 0.0405, "warmup_s": 0.001, "k_max": null, "k_name": null, "shots": 195225786, "seconds": 2.687, "detection_rate": 0.0, "observable_rate": 0.0, "suspect": false, "kept": 0.9222, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-1t|post-off": {"shots_per_s": 58120000.0, "compile_s": 0.0403, "warmup_s": 0.0008, "k_max": null, "k_name": null, "shots": 134217728, "seconds": 2.309, "detection_rate": 0.00608, "observable_rate": 0.0208, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "xtim-mt": {"shots_per_s": 164900000.0, "compile_s": 0.043, "warmup_s": 0.0011, "k_max": null, "k_name": null, "shots": 195225786, "seconds": 1.184, "detection_rate": 0.0, "observable_rate": 0.0, "suspect": false, "kept": 0.9222, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)", "threads": 12}, "xtim-mt|post-off": {"shots_per_s": 322800000.0, "compile_s": 0.043, "warmup_s": 0.001, "k_max": null, "k_name": null, "shots": 195225786, "seconds": 0.6047, "detection_rate": 0.00607, "observable_rate": 0.0208, "suspect": false, "kept": 1.0, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)", "threads": 12}, "magna-1t": {"shots_per_s": 85310.0, "compile_s": 0.0889, "warmup_s": 0.0005, "k_max": null, "k_name": null, "shots": 262144, "seconds": 3.073, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.9224, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-1t|post-off": {"shots_per_s": 81730.0, "compile_s": 0.0855, "warmup_s": 0.0005, "k_max": null, "k_name": null, "shots": 262144, "seconds": 3.207, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt": {"shots_per_s": 862300.0, "compile_s": 0.1, "warmup_s": 0.0016, "k_max": null, "k_name": null, "shots": 2097152, "seconds": 2.432, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.9222, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt|post-off": {"shots_per_s": 825500.0, "compile_s": 0.0967, "warmup_s": 0.0023, "k_max": null, "k_name": null, "shots": 2097152, "seconds": 2.541, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda": {"error": "unsupported: Magna CUDA sampler refuses this task (CUDA large query has varying quadratic geometry on the n...", "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda|post-off": {"shots_per_s": 17320000.0, "compile_s": 0.0884, "warmup_s": 0.514, "k_max": null, "k_name": null, "shots": 67108864, "seconds": 3.875, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "tsim-metal": {"error": "unsupported: K = 26 > 11, too wide for the GPU (Tsim fell back to the CPU)", "tsim_version": "1.1.0"}, "tsim-metal|post-off": {"error": "unsupported: K = 26 > 11, too wide for the GPU (Tsim fell back to the CPU)", "tsim_version": "1.1.0"}}, "papers/2610.06811_merlin/stim/code_switching_bt81_p0.001.stim": {"tsim-cpu-1t": {"error": "unsupported: Tsim refuses: strategy='active_statevector' needs 63 active qubits for one component (limit 30...", "threads": 1, "note": null}, "tsim-cpu-1t|post-off": {"error": "unsupported: Tsim refuses: strategy='active_statevector' needs 63 active qubits for one component (limit 30...", "threads": 1, "note": null}, "tsim-cpu-mt": {"error": "unsupported: Tsim refuses: strategy='active_statevector' needs 63 active qubits for one component (limit 30...", "threads": 12, "note": null}, "tsim-cpu-mt|post-off": {"error": "unsupported: Tsim refuses: strategy='active_statevector' needs 63 active qubits for one component (limit 30...", "threads": 12, "note": null}, "tsim-cuda": {"error": "unsupported (k_max > 11): Tsim k_max 63", "threads": null, "note": null}, "tsim-cuda|post-off": {"error": "unsupported (k_max > 11): Tsim k_max 63", "threads": null, "note": null}, "clifft-1t": {"error": "unsupported: active width too large: interleaved batch allocation exceeds size_t", "threads": 1, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-1t|post-off": {"error": "unsupported: active width too large: interleaved batch allocation exceeds size_t", "threads": 1, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "clifft-mt": {"error": "unsupported: active width too large: interleaved batch allocation exceeds size_t", "threads": 12, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-mt|post-off": {"error": "unsupported: active width too large: interleaved batch allocation exceeds size_t", "threads": 12, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "symft-1t": {"error": "unsupported: active width too large: Pauli string has too many qubits for active-state basis indexing", "threads": 1, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-1t|post-off": {"error": "unsupported: active width too large: Pauli string has too many qubits for active-state basis indexing", "threads": 1, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "symft-mt": {"error": "unsupported: active width too large: Pauli string has too many qubits for active-state basis indexing", "threads": 12, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-mt|post-off": {"error": "unsupported: active width too large: Pauli string has too many qubits for active-state basis indexing", "threads": 12, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "xtim-1t": {"shots_per_s": 42620000.0, "compile_s": 0.358, "warmup_s": 0.0056, "k_max": null, "k_name": null, "shots": 67108864, "seconds": 1.575, "detection_rate": 0.0, "observable_rate": 0.0, "suspect": false, "kept": 0.7841, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)", "threads": 1}, "xtim-1t|post-off": {"shots_per_s": 21970000.0, "compile_s": 0.36, "warmup_s": 0.0038, "k_max": null, "k_name": null, "shots": 67108864, "seconds": 3.054, "detection_rate": 0.00868, "observable_rate": 0.0465, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "xtim-mt": {"shots_per_s": 103000000.0, "compile_s": 0.379, "warmup_s": 0.0061, "k_max": null, "k_name": null, "shots": 67108864, "seconds": 0.6516, "detection_rate": 0.0, "observable_rate": 0.0, "suspect": false, "kept": 0.7841, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)", "threads": 12}, "xtim-mt|post-off": {"shots_per_s": 157200000.0, "compile_s": 0.376, "warmup_s": 0.0041, "k_max": null, "k_name": null, "shots": 67108864, "seconds": 0.427, "detection_rate": 0.00868, "observable_rate": 0.0465, "suspect": false, "kept": 1.0, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)", "threads": 12}, "magna-1t": {"shots_per_s": 48780.0, "compile_s": 0.49, "warmup_s": 0.001, "k_max": null, "k_name": null, "shots": 131072, "seconds": 2.687, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.7848, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-1t|post-off": {"shots_per_s": 34970.0, "compile_s": 0.474, "warmup_s": 0.0013, "k_max": null, "k_name": null, "shots": 131072, "seconds": 3.748, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt": {"shots_per_s": 498800.0, "compile_s": 0.518, "warmup_s": 0.0033, "k_max": null, "k_name": null, "shots": 1048576, "seconds": 2.102, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 0.7841, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt|post-off": {"shots_per_s": 316500.0, "compile_s": 0.504, "warmup_s": 0.0033, "k_max": null, "k_name": null, "shots": 1048576, "seconds": 3.313, "detection_rate": null, "observable_rate": null, "suspect": false, "kept": 1.0, "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda": {"error": "unsupported: Magna CUDA sampler refuses this task (CUDA large query has varying quadratic geometry on the n...", "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda|post-off": {"error": "unsupported: Magna CUDA sampler refuses this task (CUDA large query has varying quadratic geometry on the n...", "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "tsim-metal": {"error": "HEAD@0e95b9a3: exit code 1: ValueError: strategy='active_statevector' needs 63 active qubits for the component with outputs [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, ", "tsim_version": null}, "tsim-metal|post-off": {"error": "HEAD@0e95b9a3: exit code 1: ValueError: strategy='active_statevector' needs 63 active qubits for the component with outputs [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, ", "tsim_version": null}}, "papers/2607.28600_symft/stim/coherent_surface_d5_r5_p1e-3_rz0p02.stim": {"tsim-cpu-1t": {"shots_per_s": 2316.0, "compile_s": 0.925, "warmup_s": 0.478, "k_max": 11, "k_name": "tsim largest component width", "shots": 979, "seconds": 0.4155, "detection_rate": 0.00449, "observable_rate": 0.00983, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 1, "note": null}, "tsim-cpu-1t|post-off": {"shots_per_s": 2316.0, "compile_s": 0.925, "warmup_s": 0.478, "k_max": 11, "k_name": "tsim largest component width", "shots": 979, "seconds": 0.4155, "detection_rate": 0.00443, "observable_rate": 0.00999, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 1, "note": null}, "tsim-cpu-mt": {"shots_per_s": 8930.0, "compile_s": 0.531, "warmup_s": 0.175, "k_max": 11, "k_name": "tsim largest component width", "shots": 4096, "seconds": 0.4483, "detection_rate": 0.00449, "observable_rate": 0.00983, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 12, "note": null}, "tsim-cpu-mt|post-off": {"shots_per_s": 8930.0, "compile_s": 0.531, "warmup_s": 0.175, "k_max": 11, "k_name": "tsim largest component width", "shots": 4096, "seconds": 0.4483, "detection_rate": 0.00443, "observable_rate": 0.00999, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 12, "note": null}, "tsim-cuda": {"shots_per_s": 2562000.0, "compile_s": 1.56, "warmup_s": 12.0, "k_max": 11, "k_name": "tsim largest component width", "shots": 880582, "seconds": 0.343, "detection_rate": 0.00449, "observable_rate": 0.00983, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": null, "note": null}, "tsim-cuda|post-off": {"shots_per_s": 2562000.0, "compile_s": 1.56, "warmup_s": 12.0, "k_max": 11, "k_name": "tsim largest component width", "shots": 880582, "seconds": 0.343, "detection_rate": 0.00443, "observable_rate": 0.00999, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": null, "note": null}, "clifft-1t": {"shots_per_s": 9869.0, "compile_s": 0.0119, "warmup_s": 0.424, "k_max": 13, "k_name": "clifft peak_active_width", "shots": 32768, "seconds": 3.32, "detection_rate": 0.00442, "observable_rate": 0.0103, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 1, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-1t|post-off": {"shots_per_s": 9869.0, "compile_s": 0.0119, "warmup_s": 0.424, "k_max": 13, "k_name": "clifft peak_active_width", "shots": 32768, "seconds": 3.32, "detection_rate": 0.00442, "observable_rate": 0.0103, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 1, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "clifft-mt": {"shots_per_s": 87140.0, "compile_s": 0.0123, "warmup_s": 0.0648, "k_max": 13, "k_name": "clifft peak_active_width", "shots": 262144, "seconds": 3.008, "detection_rate": 0.00445, "observable_rate": 0.00994, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 12, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-mt|post-off": {"shots_per_s": 87140.0, "compile_s": 0.0123, "warmup_s": 0.0648, "k_max": 13, "k_name": "clifft peak_active_width", "shots": 262144, "seconds": 3.008, "detection_rate": 0.00445, "observable_rate": 0.00994, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 12, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"}, "symft-1t": {"shots_per_s": 29.76, "compile_s": 0.283, "warmup_s": 0.542, "k_max": 22, "k_name": "symft max_active_qubits", "shots": 64, "seconds": 2.151, "detection_rate": 0.00644, "observable_rate": 0.0104, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 1, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-1t|post-off": {"shots_per_s": 29.76, "compile_s": 0.283, "warmup_s": 0.542, "k_max": 22, "k_name": "symft max_active_qubits", "shots": 64, "seconds": 2.151, "detection_rate": 0.00644, "observable_rate": 0.0104, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 1, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "symft-mt": {"shots_per_s": 25.48, "compile_s": 3.56, "warmup_s": 0.668, "k_max": 22, "k_name": "symft max_active_qubits", "shots": 64, "seconds": 2.512, "detection_rate": 0.00557, "observable_rate": 0.0, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 12, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-mt|post-off": {"shots_per_s": 25.48, "compile_s": 3.56, "warmup_s": 0.668, "k_max": 22, "k_name": "symft max_active_qubits", "shots": 64, "seconds": 2.512, "detection_rate": 0.00557, "observable_rate": 0.0, "suspect": false, "kept": 1.0, "post_note": "manifest postselects nothing: on = off", "threads": 12, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "xtim-1t": {"error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'", "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-1t|post-off": {"error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'", "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "xtim-mt": {"error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'", "threads": 12, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-mt|post-off": {"error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'", "threads": 12, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "magna-1t": {"error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates", "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-1t|post-off": {"error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates", "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt": {"error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates", "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt|post-off": {"error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates", "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda": {"error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates", "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda|post-off": {"error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates", "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "tsim-metal": {"shots_per_s": 465735.69998109865, "compile_s": 0.49383058300009, "k_max": 11, "k_name": "active width", "kept": 1.0, "device": "metal", "tsim_version": "1.1.0", "threads": null}, "tsim-metal|post-off": {"shots_per_s": 465737.56034527, "compile_s": 0.47714566602371633, "k_max": 11, "k_name": "active width", "kept": 1.0, "device": "metal", "tsim_version": "1.1.0", "threads": null}}, "papers/2509.18294_transversal_star/stim/star_d=9.stim": {"tsim-cpu-1t": {"shots_per_s": 4815000.0, "compile_s": 1.25, "warmup_s": 0.456, "k_max": 2, "k_name": "tsim largest component width", "shots": 1547178, "seconds": 0.32, "detection_rate": 0.00963, "observable_rate": 0.16, "suspect": false, "kept": 0.007948, "threads": 1, "note": null}, "tsim-cpu-1t|post-off": {"shots_per_s": 3977000.0, "compile_s": 1.26, "warmup_s": 0.45, "k_max": 2, "k_name": "tsim largest component width", "shots": 1289315, "seconds": 0.3234, "detection_rate": 0.0136, "observable_rate": 0.379, "suspect": false, "kept": 1.0, "threads": 1, "note": null}, "tsim-cpu-mt": {"shots_per_s": 35710000.0, "compile_s": 0.394, "warmup_s": 0.145, "k_max": 2, "k_name": "tsim largest component width", "shots": 9798794, "seconds": 0.2606, "detection_rate": 0.00963, "observable_rate": 0.16, "suspect": false, "kept": 0.007939, "threads": 12, "note": null}, "tsim-cpu-mt|post-off": {"shots_per_s": 21200000.0, "compile_s": 0.408, "warmup_s": 0.195, "k_max": 2, "k_name": "tsim largest component width", "shots": 5157260, "seconds": 0.2424, "detection_rate": 0.0136, "observable_rate": 0.379, "suspect": false, "kept": 1.0, "threads": 12, "note": null}, "tsim-cuda": {"shots_per_s": 1679000000.0, "compile_s": 2.32, "warmup_s": 1.69, "k_max": 2, "k_name": "tsim largest component width", "shots": 227177303, "seconds": 0.1349, "detection_rate": 0.00963, "observable_rate": 0.16, "suspect": false, "kept": 0.007909, "threads": null, "note": null}, "tsim-cuda|post-off": {"shots_per_s": 316800000.0, "compile_s": 2.29, "warmup_s": 1.67, "k_max": 2, "k_name": "tsim largest component width", "shots": 6704438, "seconds": 0.0209, "detection_rate": 0.0136, "observable_rate": 0.379, "suspect": false, "kept": 1.0, "threads": null, "note": null}, "clifft-1t": {"shots_per_s": 2093000.0, "compile_s": 0.0584, "warmup_s": 0.251, "k_max": 2, "k_name": "clifft peak_active_width", "shots": 4194304, "seconds": 2.004, "detection_rate": null, "observable_rate": 0.16, "suspect": false, "kept": 0.007893, "threads": 1, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-1t|post-off": {"shots_per_s": 934300.0, "compile_s": 0.057, "warmup_s": 0.254, "k_max": 2, "k_name": "clifft peak_active_width", "shots": 1012009, "seconds": 1.083, "detection_rate": 0.0136, "observable_rate": 0.379, "suspect": false, "kept": 1.0, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up", "threads": 1}, "clifft-mt": {"shots_per_s": 19200000.0, "compile_s": 0.0603, "warmup_s": 0.251, "k_max": 2, "k_name": "clifft peak_active_width", "shots": 67108864, "seconds": 3.496, "detection_rate": null, "observable_rate": 0.161, "suspect": false, "kept": 0.00791, "threads": 12, "note": "output: sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up"}, "clifft-mt|post-off": {"shots_per_s": 2015000.0, "compile_s": 0.0592, "warmup_s": 0.0061, "k_max": 2, "k_name": "clifft peak_active_width", "shots": 1012009, "seconds": 0.5023, "detection_rate": 0.0136, "observable_rate": 0.379, "suspect": false, "kept": 1.0, "note": "output: sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up", "threads": 12}, "symft-1t": {"shots_per_s": 1143000.0, "compile_s": 0.0611, "warmup_s": 0.0001, "k_max": 9, "k_name": "symft max_active_qubits", "shots": 4194304, "seconds": 3.67, "detection_rate": null, "observable_rate": null, "suspect": null, "kept": 0.000143, "post_note": "SymFT postselects all detectors or none: used all 1040 (manifest: 240)", "threads": 1, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-1t|post-off": {"shots_per_s": 81490.0, "compile_s": 0.0402, "warmup_s": 0.0002, "k_max": 9, "k_name": "symft max_active_qubits", "shots": 262144, "seconds": 3.217, "detection_rate": 0.0136, "observable_rate": 0.379, "suspect": false, "kept": 1.0, "threads": 1, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "symft-mt": {"shots_per_s": 5253000.0, "compile_s": 0.0648, "warmup_s": 0.0001, "k_max": 9, "k_name": "symft max_active_qubits", "shots": 16777216, "seconds": 3.194, "detection_rate": null, "observable_rate": null, "suspect": null, "kept": 0.000142, "post_note": "SymFT postselects all detectors or none: used all 1040 (manifest: 240)", "threads": 12, "note": "output: compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)"}, "symft-mt|post-off": {"shots_per_s": 341600.0, "compile_s": 0.427, "warmup_s": 0.0027, "k_max": 9, "k_name": "symft max_active_qubits", "shots": 1048576, "seconds": 3.07, "detection_rate": 0.0136, "observable_rate": 0.378, "suspect": false, "kept": 1.0, "threads": 12, "note": "output: compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"}, "xtim-1t": {"error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'", "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-1t|post-off": {"error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'", "threads": 1, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "xtim-mt": {"error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'", "threads": 12, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)"}, "xtim-mt|post-off": {"error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'", "threads": 12, "note": "output: TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"}, "magna-1t": {"error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates", "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-1t|post-off": {"error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates", "threads": 1, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt": {"error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates", "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-mt|post-off": {"error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates", "threads": 12, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda": {"error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates", "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "magna-cuda|post-off": {"error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates", "threads": null, "note": "rate counts fault draws, each with its exact acceptance and error mass, not detector samples \u00b7 output: Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"}, "tsim-metal": {"shots_per_s": 737532733.5001937, "compile_s": 0.6044907080358826, "k_max": 2, "k_name": "active width", "kept": 0.007914930582046509, "device": "metal", "tsim_version": "1.1.0", "threads": null}, "tsim-metal|post-off": {"shots_per_s": 221991509.7783953, "compile_s": 0.599456875002943, "k_max": 2, "k_name": "active width", "kept": 1.0, "device": "metal", "tsim_version": "1.1.0", "threads": null}}}, "engines": {"tsim-cpu": {"id": "tsim-cpu", "label": "Tsim CPU", "slot": 1, "shape": "circle", "configs": ["tsim-cpu-1t", "tsim-cpu-mt"]}, "tsim-cuda": {"id": "tsim-cuda", "label": "Tsim RTX 5090", "slot": 1, "shape": "diamond", "configs": ["tsim-cuda"]}, "tsim-metal": {"id": "tsim-metal", "label": "Tsim Apple M4 Pro", "slot": 1, "shape": "triangle", "configs": ["tsim-metal"]}, "clifft": {"id": "clifft", "label": "Clifft", "slot": 2, "shape": "square", "configs": ["clifft-1t", "clifft-mt"]}, "symft": {"id": "symft", "label": "SymFT", "slot": 3, "shape": "cross", "configs": ["symft-1t", "symft-mt"]}, "xtim": {"id": "xtim", "label": "xtim", "slot": 4, "shape": "circle", "configs": ["xtim-1t", "xtim-mt"]}, "magna-cpu": {"id": "magna-cpu", "label": "Magna CPU (draws/s)", "slot": 5, "shape": "square", "configs": ["magna-1t", "magna-mt"]}, "magna-cuda": {"id": "magna-cuda", "label": "Magna RTX 5090 (draws/s)", "slot": 5, "shape": "diamond", "configs": ["magna-cuda"]}, "tsim-1t": {"id": "tsim-1t", "label": "Tsim CPU, 1 thread", "slot": 0, "shape": "circle", "configs": ["tsim-cpu-1t"]}, "tsim-mt": {"id": "tsim-mt", "label": "Tsim CPU, all cores", "slot": 1, "shape": "circle", "configs": ["tsim-cpu-mt"]}}, "modes": {"all": ["tsim-cpu", "tsim-metal", "tsim-cuda", "clifft", "symft", "xtim", "magna-cpu", "magna-cuda"], "tsim": ["tsim-1t", "tsim-mt", "tsim-metal", "tsim-cuda"]}, "specs": [["Machines", "Linux: AMD Ryzen 9 9900X 12-Core Processor, NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB. Apple: M4 Pro, 20-core GPU, for Tsim's Metal backend only."], ["Sampling", "Attempted shots per second of the detector sampler, after a warm-up call that triggers JIT and kernel compilation. Tsim is measured with its own harness (tsim-dev bench: bit-packed output, calibrated calls, best of fresh-process rounds); the other simulators with their fastest documented settings."], ["Postselection", "On: the detectors that each circuit's paper postselects, as recorded in tsim-bench (e.g. the injection and cultivation detectors in cultivation). Shots discarded by postselection count as attempted shots, so the rate is a cost per attempt; the tooltip shows the fraction kept. Off: every shot is sampled to the end."], ["Compilation", "Wall time from circuit text to a sampler ready to sample, excluding imports and first-call JIT."], ["Threads", "1 thread: pinned to one core with every thread pool capped at 1. 12: each simulator's own thread option set to all physical cores. GPU lanes do not depend on this setting."], ["Failures", "Each measurement has a 300 s budget (compilation, warm-up and sampling) and a memory cap. 'too wide': Tsim's GPU kernels support K \u2264 11 and its CPU statevector K \u2264 30. 'no rotations': the simulator has no arbitrary-angle rotations."], ["Magna", "Magna does not sample detectors: each draw of the faults gives the exact accepted probability and the probability that an observable flips. Its rate is draws per second, a different unit of work from the other simulators' shots per second. Magna has no thread option; its all-core lane is 12 processes. Circuits are converted to Magna's format by a script; Magna's kept fraction and error rate agree with Tsim's within 5 standard errors on every circuit."], ["Output", "Each simulator ran its fastest documented output contract: Tsim and xtim return bit-packed detector and observable rows; Clifft and SymFT return survivor counts with postselection on (SymFT can only postselect all detectors or none). Hover a lane for the contract used."], ["Checks", "Every simulator's detection, observable and kept rates agree with a separate Tsim run (or xtim / Magna where Tsim cannot run) within 5 standard errors."], ["K", "The most qubits held in a dense statevector at once, as each simulator reports it. Sampling cost grows as 2^K."], ["Versions", "tsim-cpu-1t: bloqade-tsim 1.1.0, branch feat/determined-measurements @ 0e95b9a37a808053df6f09ba3887ce9eaf24c18a (https://github.com/QuEraComputing/tsim) \u00b7 tsim-cuda: bloqade-tsim 1.1.0, branch cuda-statevector-executor (PR #219) @ d140f3d98ae2cedf0a916e77933bc127245489ab, cupy-cuda13x 14.2.0 \u00b7 clifft-1t: clifft 0.13.0 (PyPI) \u00b7 symft-1t: symft 2026.10.8 (PyPI wheel; = SOFT release v0.1.0 @ 81d28499, github.com/haoliri0/SOFT) \u00b7 xtim-1t: xtim 4.1.2 @ b6dc0302604c4faf59a7b753004fddb42cb8d615 (github.com/ikim-quantum/xtim, built from source) \u00b7 magna-1t: magna-quantum 0.2.0 @ e466ec60644656169878f28f4788d9a3cbf05bab (github.com/itpyi/magna, built from source) \u00b7 magna-cuda: magna-quantum 0.2.0 @ e466ec6 with cuda12 extra, cupy-cuda12x 14.2.0 (NVRTC kernels compiled at first call) \u00b7 tsim-metal: bloqade-tsim 1.1.0"], ["Circuits", "From tsim-bench (github.com/rafaelha/tsim-bench); each name links to the circuit and its paper folder."]]}</script>
+<script>
+(() => {
+  const root = document.querySelector('[data-sim]');
+  const data = JSON.parse(document.querySelector('[data-model]').textContent);
+  const state = { mode: 'all', metric: 'sampling', threads: '1t', post: 'on' };
+  const hidden = new Set();
+
+  const MARKERS = {
+    square: 'M-3.6 -3.6h7.2v7.2h-7.2Z',
+    triangle: 'M0 -4.9L4.5 3.2L-4.5 3.2Z',
+    diamond: 'M0 -5L4.7 0L0 5L-4.7 0Z',
+    cross: 'M-5.4 -2.4h3v-3h4.8v3h3v4.8h-3v3h-4.8v-3h-3Z',
+    circle: 'M-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0Z',
+  };
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const glyph = (engine, className = 'tsb__glyph') => {
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('class', className);
+    svg.setAttribute('viewBox', '-6 -6 12 12');
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', MARKERS[engine.shape]);
+    svg.append(path);
+    return svg;
+  };
+  const el = (tag, className, text) => {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  };
+
+  const sig = (v) => Number(v.toPrecision(3));
+  const rate = (v) => v >= 1e9 ? `${sig(v / 1e9)} B` : v >= 1e6 ? `${sig(v / 1e6)} M` : v >= 1e3 ? `${sig(v / 1e3)} k` : `${sig(v)}`;
+  const secs = (v) => v >= 1 ? `${sig(v)} s` : `${sig(v * 1e3)} ms`;
+  const fmt = (metric, v) => metric === 'sampling' ? rate(v) : secs(v);
+
+  /** The engines shown in the current mode, each with the result config it reads. */
+  const engines = () => data.modes[state.mode].map((id) => data.engines[id]);
+  const configOf = (engine) => engine.configs[engine.configs.length === 1 ? 0 : state.threads === '1t' ? 0 : 1];
+  const key = (config, post = state.post) => (post === 'off' ? `${config}|post-off` : config);
+  const cell = (circuit, engine, config = configOf(engine), post = state.post) => (data.cells[circuit.id] || {})[key(config, post)];
+  const value = (c) => (!c || c.error ? null : state.metric === 'sampling' ? c.shots_per_s : c.compile_s);
+
+  /* One axis per mode and metric, covering both thread settings, so a toggle moves marks, not the scale. */
+  function axis() {
+    const values = [];
+    data.circuits.forEach((circuit) =>
+      engines().forEach((engine) =>
+        engine.configs.forEach((config) =>
+          ['on', 'off'].forEach((post) => {
+            const c = cell(circuit, engine, config, post);
+            const v = !c || c.error ? null : state.metric === 'sampling' ? c.shots_per_s : c.compile_s;
+            if (v && v > 0) values.push(v);
+          }),
+        ),
+      ),
+    );
+    let lo = Math.floor(Math.log10(Math.min(...values)));
+    let hi = Math.ceil(Math.log10(Math.max(...values)));
+    if (hi - lo < 1) hi = lo + 1;
+    return { lo, hi };
+  }
+  const position = (v, ax) => ((Math.log10(v) - ax.lo) / (ax.hi - ax.lo)) * 100;
+
+  function shortError(error) {
+    if (/timeout/i.test(error)) return 'timeout';
+    if (/memory|OOM/i.test(error)) return 'out of memory';
+    if (/k_max|active width|active qubits|too wide|> ?11|limit/i.test(error)) return 'too wide';
+    if (/rotation/i.test(error)) return 'no rotations';
+    if (/unsupported/i.test(error)) return 'unsupported';
+    if (/setup/i.test(error)) return 'not installed';
+    return 'error';
+  }
+
+  function legend() {
+    const host = root.querySelector('[data-legend]');
+    host.replaceChildren(
+      ...engines().map((engine) => {
+        const item = el('li', `tsb__legend-item tsb__s${engine.slot}`);
+        const button = el('button', 'tsb__legend-toggle');
+        button.type = 'button';
+        button.setAttribute('aria-pressed', String(!hidden.has(engine.id)));
+        button.append(glyph(engine), el('span', '', engine.label));
+        button.addEventListener('click', () => {
+          if (hidden.has(engine.id)) hidden.delete(engine.id);
+          else if (engines().filter((e) => !hidden.has(e.id)).length > 1) hidden.add(engine.id);
+          render();
+        });
+        item.append(button);
+        return item;
+      }),
+    );
+  }
+
+  function render() {
+    const shown = engines().filter((engine) => !hidden.has(engine.id));
+    const ax = axis();
+    root.dataset.metric = state.metric;
+    root.querySelector('[data-threads-control]').hidden = state.metric === 'compile';
+    root.querySelector('[data-sampling-control]').hidden = state.metric === 'compile';
+    root.querySelectorAll('[data-setting]').forEach((group) =>
+      group.querySelectorAll('button').forEach((button) =>
+        button.setAttribute('aria-pressed', String(button.dataset.value === state[group.dataset.setting])),
+      ),
+    );
+    legend();
+
+    const chart = root.querySelector('[data-chart]');
+    chart.style.setProperty('--decades', String(ax.hi - ax.lo));
+    root.querySelector('[data-unit]').textContent = state.metric === 'sampling' ? 'shots/s' : 'compile';
+    const ticks = [];
+    for (let d = ax.lo; d <= ax.hi; d++) {
+      const tick = el('span', 'tsb__tick', state.metric === 'sampling' ? rate(10 ** d).replace(' ', '') : secs(10 ** d));
+      tick.style.left = `${position(10 ** d, ax)}%`;
+      ticks.push(tick);
+    }
+    root.querySelector('[data-ticks]').replaceChildren(...ticks);
+
+    const rows = data.circuits.map((circuit) => {
+      const readings = shown.map((engine) => ({ engine, c: cell(circuit, engine) }));
+      const values = readings.map(({ c }) => value(c)).filter((v) => v !== null);
+      const best = values.length ? (state.metric === 'sampling' ? Math.max(...values) : Math.min(...values)) : null;
+      const base = state.mode === 'tsim' ? value(cell(circuit, data.engines['tsim-1t'])) : null;
+
+      const row = el('div', 'tsb__row');
+      const name = el('div', 'tsb__name');
+      const link = el('a', '', circuit.label);
+      link.href = circuit.url;
+      link.target = '_blank';
+      name.append(link, el('span', 'tsb__meta', circuit.meta));
+      const ks = el('div', 'tsb__ks');
+      const plot = el('div', 'tsb__plot');
+      const vals = el('div', 'tsb__values');
+      const tip = { title: circuit.label, meta: [circuit.meta, circuit.paper], items: [] };
+
+      readings.forEach(({ engine, c }) => {
+        const v = value(c);
+        const k = c && !c.error && c.k_max !== null && c.k_max !== undefined ? String(c.k_max) : '';
+        const kSpan = el('span', '', k);
+        if (c && c.k_name) kSpan.title = c.k_name;
+        ks.append(kSpan);
+
+        const lane = el('div', `tsb__lane tsb__s${engine.slot}`);
+        lane.dataset.kind = v === null ? 'na' : 'ok';
+        if (v !== null) {
+          lane.style.setProperty('--x', `${position(v, ax)}%`);
+          lane.append(el('span', 'tsb__stem'), glyph(engine, 'tsb__mark'));
+        } else {
+          lane.append(el('span', 'tsb__lane-note', c ? shortError(c.error || '') : 'not run'));
+        }
+        plot.append(lane);
+
+        const text = v === null ? '–' : fmt(state.metric, v);
+        const span = el('span', v !== null && v === best ? 'is-best' : '', text);
+        span.dataset.kind = v === null ? 'na' : 'ok';
+        vals.append(span);
+
+        const notes = [];
+        if (c && !c.error) {
+          if (state.metric === 'sampling') notes.push(`compile ${secs(c.compile_s)}`);
+          else notes.push(`${rate(c.shots_per_s)} shots/s`);
+          if (k) notes.push(`${c.k_name || 'K'} = ${k}`);
+          if (state.metric === 'sampling' && typeof c.kept === 'number' && state.post === 'on') notes.push(`${sig(c.kept * 100)}% kept`);
+          if (c.post_note) notes.push(c.post_note);
+          if (c.note) notes.push(c.note);
+          if (c.threads) notes.push(`${c.threads} thread${c.threads === 1 ? '' : 's'}`);
+          if (base && v && state.metric === 'sampling' && engine.id !== 'tsim-1t') notes.push(`${sig(v / base)}× Tsim CPU, 1 thread`);
+          if (c.suspect) notes.push('suspect: detection rate differs from Tsim');
+        } else if (c && c.error) {
+          notes.push(c.error);
+        }
+        tip.items.push({ engine, value: text, notes });
+      });
+      plot.dataset.tip = JSON.stringify(tip);
+      row.append(name, ks, plot, vals);
+      return row;
+    });
+    root.querySelector('[data-rows]').replaceChildren(...rows);
+  }
+
+  /* --- Tooltip, as bindTips in bloqade-website's src/lib/tsim-bench.ts --- */
+  const host = root.querySelector('[data-tip-host]');
+  let current = null;
+  let pointerX = null;
+  function showTip(target) {
+    const tip = JSON.parse(target.dataset.tip);
+    current?.classList.remove('is-active');
+    current = target;
+    target.classList.add('is-active');
+    host.replaceChildren(
+      el('p', 'tsb__tip-title', tip.title),
+      ...tip.meta.map((line) => el('p', 'tsb__tip-meta', line)),
+      ...tip.items.map((item) => {
+        const box = el('div', `tsb__tip-item tsb__s${item.engine.slot}`);
+        const head = el('div', 'tsb__tip-head');
+        head.append(glyph(item.engine), el('span', 'tsb__tip-name', item.engine.label), el('strong', 'tsb__tip-value', item.value));
+        box.append(head);
+        if (item.notes.length) box.append(el('p', 'tsb__tip-notes', item.notes.join(' · ')));
+        return box;
+      }),
+    );
+    host.hidden = false;
+    const r = target.getBoundingClientRect();
+    const t = host.getBoundingClientRect();
+    const left = Math.max(8, Math.min((pointerX ?? r.left + 120) - t.width / 2, window.innerWidth - t.width - 8));
+    const above = r.top - t.height - 8;
+    const top = above >= 8 ? above : Math.min(r.bottom + 8, window.innerHeight - t.height - 8);
+    host.style.left = `${Math.round(left)}px`;
+    host.style.top = `${Math.round(Math.max(8, top))}px`;
+  }
+  root.addEventListener('pointermove', (event) => {
+    const target = event.target.closest('[data-tip]');
+    pointerX = event.clientX;
+    if (target && target !== current) showTip(target);
+    if (!target && current) { current.classList.remove('is-active'); current = null; host.hidden = true; }
+  });
+  root.addEventListener('pointerleave', () => { current?.classList.remove('is-active'); current = null; host.hidden = true; });
+
+  root.querySelectorAll('[data-setting]').forEach((group) =>
+    group.querySelectorAll('button').forEach((button) =>
+      button.addEventListener('click', () => {
+        state[group.dataset.setting] = button.dataset.value;
+        render();
+      }),
+    ),
+  );
+
+  root.querySelector('[data-specs]').replaceChildren(
+    ...data.specs.flatMap(([term, text]) => [el('dt', '', term), el('dd', '', text)]),
+  );
+  render();
+
+  new ResizeObserver(() => parent.postMessage({ tsbHeight: document.documentElement.scrollHeight }, '*')).observe(document.body);
+})();
+</script>
+</body>
+</html>

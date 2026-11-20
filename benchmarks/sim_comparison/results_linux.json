@@ -1,0 +1,3530 @@
+{
+ "machine": {
+  "cpu": "AMD Ryzen 9 9900X 12-Core Processor",
+  "gpu": "NVIDIA GeForce RTX 5090, 580.178.04, 32607 MiB",
+  "cores": "12 physical / 24 logical (SMT)",
+  "memory": "60 GB",
+  "os": "Ubuntu 24.04.3 LTS, Linux 7.0.0-38-generic",
+  "date": "2026-11-19"
+ },
+ "simulators": {
+  "tsim-cpu-1t": {
+   "version": "bloqade-tsim 1.1.0, branch feat/determined-measurements @ 0e95b9a37a808053df6f09ba3887ce9eaf24c18a (https://github.com/QuEraComputing/tsim)",
+   "threads": 1,
+   "device": "cpu (Ryzen 9 9900X), pinned by tsim-dev to one core",
+   "settings": "tsim-dev bench (dev/tsim_dev in the same checkout), uv-synced worktree src/tsim-dm",
+   "output_contract": {
+    "on": "tsim-dev bench: detector sampler, bit-packed rows (kept rows only), calls calibrated to ~0.3 s and <= ~256 MB, median of 3 fresh-process rounds",
+    "off": "tsim-dev bench: detector sampler, bit-packed rows (kept rows only), calls calibrated to ~0.3 s and <= ~256 MB, median of 3 fresh-process rounds"
+   }
+  },
+  "tsim-cpu-mt": {
+   "version": "bloqade-tsim 1.1.0, branch feat/determined-measurements @ 0e95b9a3",
+   "threads": 12,
+   "device": "cpu, numba threads = 12, pinned by tsim-dev to 12 logical CPUs on 12 distinct physical cores",
+   "settings": "tsim-dev bench --threads 12",
+   "output_contract": {
+    "on": "tsim-dev bench: detector sampler, bit-packed rows (kept rows only), calls calibrated to ~0.3 s and <= ~256 MB, median of 3 fresh-process rounds",
+    "off": "tsim-dev bench: detector sampler, bit-packed rows (kept rows only), calls calibrated to ~0.3 s and <= ~256 MB, median of 3 fresh-process rounds"
+   }
+  },
+  "tsim-cuda": {
+   "version": "bloqade-tsim 1.1.0, branch cuda-statevector-executor (PR #219) @ d140f3d98ae2cedf0a916e77933bc127245489ab, cupy-cuda13x 14.2.0",
+   "threads": 1,
+   "device": "cuda (RTX 5090); components k_max <= 11 only",
+   "settings": "tsim-dev bench --device gpu (worktree src/tsim-cuda, uv sync --extra cuda); allow_large_shared_memory workaround not needed by tsim-dev",
+   "output_contract": {
+    "on": "tsim-dev bench: detector sampler, bit-packed rows (kept rows only), calls calibrated to ~0.3 s and <= ~256 MB, median of 3 fresh-process rounds",
+    "off": "tsim-dev bench: detector sampler, bit-packed rows (kept rows only), calls calibrated to ~0.3 s and <= ~256 MB, median of 3 fresh-process rounds"
+   }
+  },
+  "clifft-1t": {
+   "version": "clifft 0.13.0 (PyPI)",
+   "threads": 1,
+   "device": "cpu, taskset one core",
+   "settings": "compile(default_hir_pass_manager() + ActiveWidthSchedulePass()); batch_size chosen by batch_size='tune' once at warm-up",
+   "output_contract": {
+    "on": "sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up",
+    "off": "sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"
+   }
+  },
+  "clifft-mt": {
+   "version": "clifft 0.13.0 (PyPI)",
+   "threads": 12,
+   "device": "cpu, taskset 0-11 (12 physical cores)",
+   "settings": "sample(..., threads=12) / sample_survivors(..., threads=12)",
+   "output_contract": {
+    "on": "sample_survivors(keep_records=False): counts only (passed shots, per-observable ones); batch_size from batch_size='tune' at warm-up",
+    "off": "sample(): unpacked uint8 measurements, detectors, observables; batch_size from batch_size='tune' at warm-up"
+   }
+  },
+  "symft-1t": {
+   "version": "symft 2026.10.8 (PyPI wheel; = SOFT release v0.1.0 @ 81d28499, github.com/haoliri0/SOFT)",
+   "threads": 1,
+   "device": "cpu, taskset one core",
+   "settings": "post on: compile_counts_sampler(postselect_detectors=True, cpu_backend='compiled'); post off: compile_sampler(batch=True) measurement records + stim m2d",
+   "output_contract": {
+    "on": "compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)",
+    "off": "compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"
+   }
+  },
+  "symft-mt": {
+   "version": "symft 2026.10.8 (PyPI)",
+   "threads": 12,
+   "device": "cpu, taskset 0-11",
+   "settings": "post on: counts sampler threads=12 (compiled backend supports only threads=1, so the legacy multithreaded path); post off: 12 Python threads with one compiled sampler each",
+   "output_contract": {
+    "on": "compile_counts_sampler(cpu_backend='compiled' if eligible): counts only (accepted shots, observable-0 logical errors)",
+    "off": "compile_sampler(batch=True).sample(bit_packed=True) measurement records, converted to bit-packed detectors+observables by stim's m2d converter (raw parities; conversion time included). SymFT's counts sampler without postselection falls back to its slower legacy path, so this per-shot path is its fastest here"
+   }
+  },
+  "xtim-1t": {
+   "version": "xtim 4.1.2 @ b6dc0302604c4faf59a7b753004fddb42cb8d615 (github.com/ikim-quantum/xtim, built from source)",
+   "threads": 1,
+   "device": "cpu, taskset one core",
+   "settings": "compile_twirl_sampler(text) (default selfcheck window runs in the warm-up call); sample(n, threads=1[, postselect=mask])",
+   "output_contract": {
+    "on": "TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)",
+    "off": "TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"
+   }
+  },
+  "xtim-mt": {
+   "version": "xtim 4.1.2 @ b6dc0302",
+   "threads": 12,
+   "device": "cpu, taskset 0-11",
+   "settings": "sample(n, threads=12)",
+   "output_contract": {
+    "on": "TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference); postselect=mask (kept rows only)",
+    "off": "TwirlSampler.sample: Stim b8 bit-packed detectors + observables (relative to noiseless reference)"
+   }
+  },
+  "magna-1t": {
+   "version": "magna-quantum 0.2.0 @ e466ec60644656169878f28f4788d9a3cbf05bab (github.com/itpyi/magna, built from source)",
+   "threads": 1,
+   "device": "cpu, taskset one core",
+   "settings": "native task via ~/sim-comparison/magna_convert.py; run(compiled, shots=n), physical sampling; options of the packaged examples (max_path_bits 65536, max_doubled_path_bits 131072, max_quotient_rank 12, max_terms 4096)",
+   "output_contract": {
+    "on": "Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows",
+    "off": "Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"
+   }
+  },
+  "magna-mt": {
+   "version": "magna-quantum 0.2.0 @ e466ec6",
+   "threads": 12,
+   "device": "cpu, taskset 0-11",
+   "settings": "Magna has no thread option: 12 forked processes sharing the compiled circuit, shots split evenly",
+   "output_contract": {
+    "on": "Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows",
+    "off": "Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"
+   }
+  },
+  "magna-cuda": {
+   "version": "magna-quantum 0.2.0 @ e466ec6 with cuda12 extra, cupy-cuda12x 14.2.0 (NVRTC kernels compiled at first call)",
+   "threads": 1,
+   "device": "cuda (RTX 5090)",
+   "settings": "magna.cuda_sampler.CudaSampler(compiled).run(n, batch_size=min(n, 2^19))",
+   "output_contract": {
+    "on": "Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows",
+    "off": "Magna native task: exact per-draw acceptance (POSTSELECT on the manifest mask) and error mass (any OBSERVABLE flipped from its noiseless value); counts only, no per-shot rows"
+   }
+  }
+ },
+ "notes": {
+  "keys": "'<config>' = postselection on (tsim-bench circuits.toml mask); '<config>|post-off' = none",
+  "shots_per_s": "attempted shots per second, kept or not",
+  "kept": "fraction of attempted shots surviving postselection",
+  "rates": "detection_rate: mean over kept shots and noiselessly-deterministic detectors of a detection event; observable_rate: mean observable flip among kept shots (null where the simulator returns no per-shot rows; Tsim's rates come from a separate Tsim CPU reference run)",
+  "suspect": "a sanity statistic (kept, rates) differs from the Tsim reference (or xtim/Magna where Tsim cannot run) by > 5 standard errors; null = nothing comparable",
+  "timing": "Tsim: tsim-dev bench (calls calibrated to ~0.3 s and <= ~256 MB, median of 3 fresh-process rounds). Others: n doubles from 64 until a call takes >= 2 s (or 2 GiB output), best of 3 calls at that n. compile_s and warmup_s are excluded from shots_per_s. 300 s per cell, systemd MemoryMax per worker",
+  "isolation": "every timed cell ran alone (1t pinned to one physical core, mt to the 12 physical cores); only failed 1t cells (timeout/OOM/unsupported) come from an 8-way parallel pass",
+  "details": "results_full.json has standard errors, z-scores, output contracts per cell, raw errors"
+ },
+ "circuits": {
+  "papers/2406.17653_transversal_algorithmic_ft/stim/s_injection_T_d5_p0.001_pinj0.1.stim": {
+   "tsim-cpu-1t": {
+    "shots_per_s": 35000000.0,
+    "compile_s": 0.063,
+    "warmup_s": 0.468,
+    "k_max": 1,
+    "k_name": "tsim largest component width",
+    "shots": 10737415,
+    "seconds": 0.3062,
+    "detection_rate": 0.00301,
+    "observable_rate": 0.686,
+    "suspect": false,
+    "kept": 0.9118
+   },
+   "tsim-cpu-1t|post-off": {
+    "shots_per_s": 33550000.0,
+    "compile_s": 0.0631,
+    "warmup_s": 0.461,
+    "k_max": 1,
+    "k_name": "tsim largest component width",
+    "shots": 10737415,
+    "seconds": 0.2882,
+    "detection_rate": 0.00434,
+    "observable_rate": 0.679,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cpu-mt": {
+    "shots_per_s": 215400000.0,
+    "compile_s": 0.0203,
+    "warmup_s": 0.175,
+    "k_max": 1,
+    "k_name": "tsim largest component width",
+    "shots": 51539592,
+    "seconds": 0.2392,
+    "detection_rate": 0.00301,
+    "observable_rate": 0.686,
+    "suspect": false,
+    "kept": 0.9117
+   },
+   "tsim-cpu-mt|post-off": {
+    "shots_per_s": 260100000.0,
+    "compile_s": 0.0204,
+    "warmup_s": 0.177,
+    "k_max": 1,
+    "k_name": "tsim largest component width",
+    "shots": 73014422,
+    "seconds": 0.2675,
+    "detection_rate": 0.00434,
+    "observable_rate": 0.679,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cuda": {
+    "shots_per_s": 2738000000.0,
+    "compile_s": 0.673,
+    "warmup_s": 1.16,
+    "k_max": 1,
+    "k_name": "tsim largest component width",
+    "shots": 120259048,
+    "seconds": 0.04224,
+    "detection_rate": 0.00301,
+    "observable_rate": 0.686,
+    "suspect": false,
+    "kept": 0.9118
+   },
+   "tsim-cuda|post-off": {
+    "shots_per_s": 2651000000.0,
+    "compile_s": 0.84,
+    "warmup_s": 0.0306,
+    "k_max": 1,
+    "k_name": "tsim largest component width",
+    "shots": 53687075,
+    "seconds": 0.02,
+    "detection_rate": 0.00434,
+    "observable_rate": 0.679,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "clifft-1t": {
+    "shots_per_s": 17180000.0,
+    "compile_s": 0.0082,
+    "warmup_s": 0.25,
+    "k_max": 2,
+    "k_name": "clifft peak_active_width",
+    "shots": 67108864,
+    "seconds": 3.906,
+    "detection_rate": null,
+    "observable_rate": 0.687,
+    "suspect": false,
+    "kept": 0.9118
+   },
+   "clifft-1t|post-off": {
+    "shots_per_s": 7451000.0,
+    "compile_s": 0.0081,
+    "warmup_s": 0.25,
+    "k_max": 2,
+    "k_name": "clifft peak_active_width",
+    "shots": 7087404,
+    "seconds": 0.9513,
+    "detection_rate": 0.00434,
+    "observable_rate": 0.678,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "clifft-mt": {
+    "shots_per_s": 176400000.0,
+    "compile_s": 0.0084,
+    "warmup_s": 0.25,
+    "k_max": 2,
+    "k_name": "clifft peak_active_width",
+    "shots": 536870912,
+    "seconds": 3.043,
+    "detection_rate": null,
+    "observable_rate": 0.687,
+    "suspect": false,
+    "kept": 0.9118
+   },
+   "clifft-mt|post-off": {
+    "shots_per_s": 17550000.0,
+    "compile_s": 0.0085,
+    "warmup_s": 0.251,
+    "k_max": 2,
+    "k_name": "clifft peak_active_width",
+    "shots": 7087404,
+    "seconds": 0.4038,
+    "detection_rate": 0.00435,
+    "observable_rate": 0.679,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "symft-1t": {
+    "shots_per_s": 21420000.0,
+    "compile_s": 0.0033,
+    "warmup_s": 0.0001,
+    "k_max": 2,
+    "k_name": "symft max_active_qubits",
+    "shots": 67108864,
+    "seconds": 3.134,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": null,
+    "kept": 0.7766,
+    "post_note": "SymFT postselects all detectors or none: used all 124 (manifest: 11)"
+   },
+   "symft-1t|post-off": {
+    "shots_per_s": 556500.0,
+    "compile_s": 0.0074,
+    "warmup_s": 0.0001,
+    "k_max": 2,
+    "k_name": "symft max_active_qubits",
+    "shots": 2097152,
+    "seconds": 3.769,
+    "detection_rate": 0.00433,
+    "observable_rate": 0.679,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "symft-mt": {
+    "shots_per_s": 104000000.0,
+    "compile_s": 0.0049,
+    "warmup_s": 0.0001,
+    "k_max": 2,
+    "k_name": "symft max_active_qubits",
+    "shots": 268435456,
+    "seconds": 2.58,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": null,
+    "kept": 0.7766,
+    "post_note": "SymFT postselects all detectors or none: used all 124 (manifest: 11)"
+   },
+   "symft-mt|post-off": {
+    "shots_per_s": 2086000.0,
+    "compile_s": 0.0296,
+    "warmup_s": 0.0013,
+    "k_max": 2,
+    "k_name": "symft max_active_qubits",
+    "shots": 4194304,
+    "seconds": 2.011,
+    "detection_rate": 0.00432,
+    "observable_rate": 0.679,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-1t": {
+    "shots_per_s": 26190000.0,
+    "compile_s": 0.024,
+    "warmup_s": 0.0017,
+    "k_max": null,
+    "k_name": null,
+    "shots": 67108864,
+    "seconds": 2.562,
+    "detection_rate": 0.00301,
+    "observable_rate": 0.687,
+    "suspect": false,
+    "kept": 0.9118
+   },
+   "xtim-1t|post-off": {
+    "shots_per_s": 27120000.0,
+    "compile_s": 0.0239,
+    "warmup_s": 0.0021,
+    "k_max": null,
+    "k_name": null,
+    "shots": 67108864,
+    "seconds": 2.474,
+    "detection_rate": 0.00432,
+    "observable_rate": 0.678,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-mt": {
+    "shots_per_s": 114600000.0,
+    "compile_s": 0.0249,
+    "warmup_s": 0.0019,
+    "k_max": null,
+    "k_name": null,
+    "shots": 126322567,
+    "seconds": 1.103,
+    "detection_rate": 0.003,
+    "observable_rate": 0.687,
+    "suspect": false,
+    "kept": 0.9118,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "xtim-mt|post-off": {
+    "shots_per_s": 161500000.0,
+    "compile_s": 0.026,
+    "warmup_s": 0.0024,
+    "k_max": null,
+    "k_name": null,
+    "shots": 126322567,
+    "seconds": 0.7821,
+    "detection_rate": 0.00431,
+    "observable_rate": 0.678,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "magna-1t": {
+    "shots_per_s": 165800.0,
+    "compile_s": 0.0355,
+    "warmup_s": 0.0003,
+    "k_max": null,
+    "k_name": null,
+    "shots": 524288,
+    "seconds": 3.162,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.9116
+   },
+   "magna-1t|post-off": {
+    "shots_per_s": 155900.0,
+    "compile_s": 0.0351,
+    "warmup_s": 0.0003,
+    "k_max": null,
+    "k_name": null,
+    "shots": 524288,
+    "seconds": 3.364,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-mt": {
+    "shots_per_s": 1661000.0,
+    "compile_s": 0.0462,
+    "warmup_s": 0.0013,
+    "k_max": null,
+    "k_name": null,
+    "shots": 4194304,
+    "seconds": 2.525,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.9117
+   },
+   "magna-mt|post-off": {
+    "shots_per_s": 1579000.0,
+    "compile_s": 0.0452,
+    "warmup_s": 0.0015,
+    "k_max": null,
+    "k_name": null,
+    "shots": 4194304,
+    "seconds": 2.656,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-cuda": {
+    "shots_per_s": 506300000.0,
+    "compile_s": 0.0388,
+    "warmup_s": 0.429,
+    "k_max": null,
+    "k_name": null,
+    "shots": 1073741824,
+    "seconds": 2.121,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.9118
+   },
+   "magna-cuda|post-off": {
+    "shots_per_s": 809000000.0,
+    "compile_s": 0.0392,
+    "warmup_s": 0.415,
+    "k_max": null,
+    "k_name": null,
+    "shots": 2147483648,
+    "seconds": 2.655,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   }
+  },
+  "papers/2409.17595_magic_state_cultivation/stim/inject_cultivate_d3_p0.001.stim": {
+   "tsim-cpu-1t": {
+    "shots_per_s": 28510000.0,
+    "compile_s": 0.07,
+    "warmup_s": 0.473,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 10020846,
+    "seconds": 0.3122,
+    "detection_rate": 0.0,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.6868
+   },
+   "tsim-cpu-1t|post-off": {
+    "shots_per_s": 26100000.0,
+    "compile_s": 0.071,
+    "warmup_s": 0.469,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 7972369,
+    "seconds": 0.3049,
+    "detection_rate": 0.0599,
+    "observable_rate": 0.0241,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cpu-mt": {
+    "shots_per_s": 215200000.0,
+    "compile_s": 0.0228,
+    "warmup_s": 0.227,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 51130560,
+    "seconds": 0.2209,
+    "detection_rate": 0.0,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.6868
+   },
+   "tsim-cpu-mt|post-off": {
+    "shots_per_s": 127600000.0,
+    "compile_s": 0.0223,
+    "warmup_s": 0.18,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 25565280,
+    "seconds": 0.1805,
+    "detection_rate": 0.0599,
+    "observable_rate": 0.0241,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cuda": {
+    "shots_per_s": 12420000000.0,
+    "compile_s": 0.74,
+    "warmup_s": 1.72,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 613566720,
+    "seconds": 0.04908,
+    "detection_rate": 0.0,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.6868
+   },
+   "tsim-cuda|post-off": {
+    "shots_per_s": 10890000000.0,
+    "compile_s": 0.687,
+    "warmup_s": 1.7,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 319566000,
+    "seconds": 0.02921,
+    "detection_rate": 0.0599,
+    "observable_rate": 0.0241,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "clifft-1t": {
+    "shots_per_s": 4854000.0,
+    "compile_s": 0.0061,
+    "warmup_s": 0.251,
+    "k_max": 4,
+    "k_name": "clifft peak_active_width",
+    "shots": 16777216,
+    "seconds": 3.456,
+    "detection_rate": null,
+    "observable_rate": 8.39e-07,
+    "suspect": false,
+    "kept": 0.6868
+   },
+   "clifft-1t|post-off": {
+    "shots_per_s": 4625000.0,
+    "compile_s": 0.0061,
+    "warmup_s": 0.25,
+    "k_max": 4,
+    "k_name": "clifft peak_active_width",
+    "shots": 16777216,
+    "seconds": 3.628,
+    "detection_rate": 0.0595,
+    "observable_rate": 0.024,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "clifft-mt": {
+    "shots_per_s": 41190000.0,
+    "compile_s": 0.0064,
+    "warmup_s": 0.25,
+    "k_max": 4,
+    "k_name": "clifft peak_active_width",
+    "shots": 134217728,
+    "seconds": 3.258,
+    "detection_rate": null,
+    "observable_rate": 8.5e-07,
+    "suspect": false,
+    "kept": 0.6868
+   },
+   "clifft-mt|post-off": {
+    "shots_per_s": 36880000.0,
+    "compile_s": 0.0063,
+    "warmup_s": 0.25,
+    "k_max": 4,
+    "k_name": "clifft peak_active_width",
+    "shots": 51130563,
+    "seconds": 1.386,
+    "detection_rate": 0.0597,
+    "observable_rate": 0.0243,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "symft-1t": {
+    "shots_per_s": 4613000.0,
+    "compile_s": 0.0022,
+    "warmup_s": 0.0,
+    "k_max": 4,
+    "k_name": "symft max_active_qubits",
+    "shots": 16777216,
+    "seconds": 3.637,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.6867
+   },
+   "symft-1t|post-off": {
+    "shots_per_s": 2564000.0,
+    "compile_s": 0.0068,
+    "warmup_s": 0.0002,
+    "k_max": 4,
+    "k_name": "symft max_active_qubits",
+    "shots": 8388608,
+    "seconds": 3.271,
+    "detection_rate": 0.0597,
+    "observable_rate": 0.0243,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "symft-mt": {
+    "shots_per_s": 26690000.0,
+    "compile_s": 0.0054,
+    "warmup_s": 0.0,
+    "k_max": 4,
+    "k_name": "symft max_active_qubits",
+    "shots": 67108864,
+    "seconds": 2.514,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.6868
+   },
+   "symft-mt|post-off": {
+    "shots_per_s": 8942000.0,
+    "compile_s": 0.024,
+    "warmup_s": 0.0016,
+    "k_max": 4,
+    "k_name": "symft max_active_qubits",
+    "shots": 33554432,
+    "seconds": 3.753,
+    "detection_rate": 0.0597,
+    "observable_rate": 0.0243,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-1t": {
+    "shots_per_s": 56920000.0,
+    "compile_s": 0.0219,
+    "warmup_s": 0.0004,
+    "k_max": null,
+    "k_name": null,
+    "shots": 134217728,
+    "seconds": 2.358,
+    "detection_rate": 0.0,
+    "observable_rate": 5e-06,
+    "suspect": false,
+    "kept": 0.6868
+   },
+   "xtim-1t|post-off": {
+    "shots_per_s": 46910000.0,
+    "compile_s": 0.0171,
+    "warmup_s": 0.0004,
+    "k_max": null,
+    "k_name": null,
+    "shots": 134217728,
+    "seconds": 2.861,
+    "detection_rate": 0.0598,
+    "observable_rate": 0.0237,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-mt": {
+    "shots_per_s": 143900000.0,
+    "compile_s": 0.0222,
+    "warmup_s": 0.0006,
+    "k_max": null,
+    "k_name": null,
+    "shots": 536870912,
+    "seconds": 3.73,
+    "detection_rate": 0.0,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.6868
+   },
+   "xtim-mt|post-off": {
+    "shots_per_s": 293000000.0,
+    "compile_s": 0.0176,
+    "warmup_s": 0.0006,
+    "k_max": null,
+    "k_name": null,
+    "shots": 536870912,
+    "seconds": 1.832,
+    "detection_rate": 0.0597,
+    "observable_rate": 0.024,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "magna-1t": {
+    "shots_per_s": 210300.0,
+    "compile_s": 0.0249,
+    "warmup_s": 0.0002,
+    "k_max": null,
+    "k_name": null,
+    "shots": 524288,
+    "seconds": 2.493,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.6866
+   },
+   "magna-1t|post-off": {
+    "shots_per_s": 174100.0,
+    "compile_s": 0.0247,
+    "warmup_s": 0.0003,
+    "k_max": null,
+    "k_name": null,
+    "shots": 524288,
+    "seconds": 3.012,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-mt": {
+    "shots_per_s": 2179000.0,
+    "compile_s": 0.0378,
+    "warmup_s": 0.0018,
+    "k_max": null,
+    "k_name": null,
+    "shots": 8388608,
+    "seconds": 3.849,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.6869
+   },
+   "magna-mt|post-off": {
+    "shots_per_s": 1807000.0,
+    "compile_s": 0.0345,
+    "warmup_s": 0.0014,
+    "k_max": null,
+    "k_name": null,
+    "shots": 4194304,
+    "seconds": 2.321,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-cuda": {
+    "shots_per_s": 390500000.0,
+    "compile_s": 0.0278,
+    "warmup_s": 0.442,
+    "k_max": null,
+    "k_name": null,
+    "shots": 1073741824,
+    "seconds": 2.75,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.6868
+   },
+   "magna-cuda|post-off": {
+    "shots_per_s": 532500000.0,
+    "compile_s": 0.0286,
+    "warmup_s": 0.406,
+    "k_max": null,
+    "k_name": null,
+    "shots": 1073741824,
+    "seconds": 2.016,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   }
+  },
+  "papers/2409.17595_magic_state_cultivation/stim/inject_cultivate_d5_p0.001.stim": {
+   "tsim-cpu-1t": {
+    "shots_per_s": 14720000.0,
+    "compile_s": 0.41,
+    "warmup_s": 0.442,
+    "k_max": 6,
+    "k_name": "tsim largest component width",
+    "shots": 4971026,
+    "seconds": 0.337,
+    "detection_rate": 0.0,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.144
+   },
+   "tsim-cpu-1t|post-off": {
+    "shots_per_s": 1116000.0,
+    "compile_s": 0.409,
+    "warmup_s": 0.434,
+    "k_max": 6,
+    "k_name": "tsim largest component width",
+    "shots": 375265,
+    "seconds": 0.3336,
+    "detection_rate": 0.0596,
+    "observable_rate": 0.0699,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cpu-mt": {
+    "shots_per_s": 94900000.0,
+    "compile_s": 0.132,
+    "warmup_s": 0.171,
+    "k_max": 6,
+    "k_name": "tsim largest component width",
+    "shots": 39768208,
+    "seconds": 0.3099,
+    "detection_rate": 0.0,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.144
+   },
+   "tsim-cpu-mt|post-off": {
+    "shots_per_s": 2464000.0,
+    "compile_s": 0.136,
+    "warmup_s": 0.144,
+    "k_max": 6,
+    "k_name": "tsim largest component width",
+    "shots": 1048576,
+    "seconds": 0.4245,
+    "detection_rate": 0.0596,
+    "observable_rate": 0.0699,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cuda": {
+    "shots_per_s": 4072000000.0,
+    "compile_s": 1.2,
+    "warmup_s": 0.03,
+    "k_max": 6,
+    "k_name": "tsim largest component width",
+    "shots": 382769002,
+    "seconds": 0.09327,
+    "detection_rate": 0.0,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.144
+   },
+   "tsim-cuda|post-off": {
+    "shots_per_s": 1297000000.0,
+    "compile_s": 1.2,
+    "warmup_s": 7.19,
+    "k_max": 6,
+    "k_name": "tsim largest component width",
+    "shots": 59652312,
+    "seconds": 0.04596,
+    "detection_rate": 0.0596,
+    "observable_rate": 0.0699,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "clifft-1t": {
+    "shots_per_s": 417800.0,
+    "compile_s": 0.0164,
+    "warmup_s": 0.26,
+    "k_max": 10,
+    "k_name": "clifft peak_active_width",
+    "shots": 1048576,
+    "seconds": 2.51,
+    "detection_rate": null,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.1437
+   },
+   "clifft-1t|post-off": {
+    "shots_per_s": 132000.0,
+    "compile_s": 0.0162,
+    "warmup_s": 0.28,
+    "k_max": 10,
+    "k_name": "clifft peak_active_width",
+    "shots": 524288,
+    "seconds": 3.972,
+    "detection_rate": 0.0595,
+    "observable_rate": 0.0694,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "clifft-mt": {
+    "shots_per_s": 4185000.0,
+    "compile_s": 0.0172,
+    "warmup_s": 0.25,
+    "k_max": 10,
+    "k_name": "clifft peak_active_width",
+    "shots": 8388608,
+    "seconds": 2.005,
+    "detection_rate": null,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.144
+   },
+   "clifft-mt|post-off": {
+    "shots_per_s": 1247000.0,
+    "compile_s": 0.0179,
+    "warmup_s": 0.253,
+    "k_max": 10,
+    "k_name": "clifft peak_active_width",
+    "shots": 4194304,
+    "seconds": 3.363,
+    "detection_rate": 0.0595,
+    "observable_rate": 0.0699,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "symft-1t": {
+    "shots_per_s": 379900.0,
+    "compile_s": 0.0246,
+    "warmup_s": 0.0001,
+    "k_max": 10,
+    "k_name": "symft max_active_qubits",
+    "shots": 1048576,
+    "seconds": 2.76,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.144
+   },
+   "symft-1t|post-off": {
+    "shots_per_s": 50840.0,
+    "compile_s": 0.0181,
+    "warmup_s": 0.0004,
+    "k_max": 10,
+    "k_name": "symft max_active_qubits",
+    "shots": 131072,
+    "seconds": 2.578,
+    "detection_rate": 0.0594,
+    "observable_rate": 0.0694,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "symft-mt": {
+    "shots_per_s": 644900.0,
+    "compile_s": 0.0283,
+    "warmup_s": 0.0002,
+    "k_max": 10,
+    "k_name": "symft max_active_qubits",
+    "shots": 2097152,
+    "seconds": 3.252,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.1441
+   },
+   "symft-mt|post-off": {
+    "shots_per_s": 483000.0,
+    "compile_s": 0.151,
+    "warmup_s": 0.0021,
+    "k_max": 10,
+    "k_name": "symft max_active_qubits",
+    "shots": 1048576,
+    "seconds": 2.171,
+    "detection_rate": 0.0595,
+    "observable_rate": 0.0687,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-1t": {
+    "shots_per_s": 23570000.0,
+    "compile_s": 0.0401,
+    "warmup_s": 0.0018,
+    "k_max": null,
+    "k_name": null,
+    "shots": 67108864,
+    "seconds": 2.848,
+    "detection_rate": 0.0,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.1439
+   },
+   "xtim-1t|post-off": {
+    "shots_per_s": 6442000.0,
+    "compile_s": 0.0394,
+    "warmup_s": 0.0028,
+    "k_max": null,
+    "k_name": null,
+    "shots": 16777216,
+    "seconds": 2.604,
+    "detection_rate": 0.0595,
+    "observable_rate": 0.0701,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-mt": {
+    "shots_per_s": 117100000.0,
+    "compile_s": 0.0435,
+    "warmup_s": 0.0022,
+    "k_max": null,
+    "k_name": null,
+    "shots": 143165576,
+    "seconds": 1.222,
+    "detection_rate": 0.0,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.144,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "xtim-mt|post-off": {
+    "shots_per_s": 52350000.0,
+    "compile_s": 0.0435,
+    "warmup_s": 0.0032,
+    "k_max": null,
+    "k_name": null,
+    "shots": 134217728,
+    "seconds": 2.564,
+    "detection_rate": 0.0596,
+    "observable_rate": 0.0696,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-1t": {
+    "shots_per_s": 220900.0,
+    "compile_s": 0.0419,
+    "warmup_s": 0.0003,
+    "k_max": null,
+    "k_name": null,
+    "shots": 524288,
+    "seconds": 2.374,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.1436
+   },
+   "magna-1t|post-off": {
+    "shots_per_s": 109700.0,
+    "compile_s": 0.0411,
+    "warmup_s": 0.0004,
+    "k_max": null,
+    "k_name": null,
+    "shots": 262144,
+    "seconds": 2.389,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-mt": {
+    "shots_per_s": 2325000.0,
+    "compile_s": 0.0538,
+    "warmup_s": 0.002,
+    "k_max": null,
+    "k_name": null,
+    "shots": 8388608,
+    "seconds": 3.607,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.144
+   },
+   "magna-mt|post-off": {
+    "shots_per_s": 1120000.0,
+    "compile_s": 0.052,
+    "warmup_s": 0.0019,
+    "k_max": null,
+    "k_name": null,
+    "shots": 4194304,
+    "seconds": 3.745,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-cuda": {
+    "shots_per_s": 95790000.0,
+    "compile_s": 0.0492,
+    "warmup_s": 0.284,
+    "k_max": null,
+    "k_name": null,
+    "shots": 268435456,
+    "seconds": 2.802,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.144
+   },
+   "magna-cuda|post-off": {
+    "shots_per_s": 81320000.0,
+    "compile_s": 0.0483,
+    "warmup_s": 0.271,
+    "k_max": null,
+    "k_name": null,
+    "shots": 268435456,
+    "seconds": 3.301,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   }
+  },
+  "papers/2409.17595_magic_state_cultivation/stim/end2end_d5_dsurface15_p0.001.stim": {
+   "tsim-cpu-1t": {
+    "shots_per_s": 859400.0,
+    "compile_s": 9.41,
+    "warmup_s": 0.39,
+    "k_max": 6,
+    "k_name": "tsim largest component width",
+    "shots": 293370,
+    "seconds": 0.3406,
+    "detection_rate": 0.0313,
+    "observable_rate": 0.501,
+    "suspect": false,
+    "kept": 0.05177
+   },
+   "tsim-cpu-1t|post-off": {
+    "shots_per_s": 446000.0,
+    "compile_s": 9.17,
+    "warmup_s": 0.404,
+    "k_max": 6,
+    "k_name": "tsim largest component width",
+    "shots": 97790,
+    "seconds": 0.2124,
+    "detection_rate": 0.0349,
+    "observable_rate": 0.5,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cpu-mt": {
+    "shots_per_s": 7229000.0,
+    "compile_s": 2.81,
+    "warmup_s": 0.183,
+    "k_max": 6,
+    "k_name": "tsim largest component width",
+    "shots": 2346960,
+    "seconds": 0.28,
+    "detection_rate": 0.0313,
+    "observable_rate": 0.501,
+    "suspect": false,
+    "kept": 0.05193
+   },
+   "tsim-cpu-mt|post-off": {
+    "shots_per_s": 2580000.0,
+    "compile_s": 2.8,
+    "warmup_s": 0.186,
+    "k_max": 6,
+    "k_name": "tsim largest component width",
+    "shots": 586740,
+    "seconds": 0.2148,
+    "detection_rate": 0.0349,
+    "observable_rate": 0.5,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cuda": {
+    "shots_per_s": 438800000.0,
+    "compile_s": 10.7,
+    "warmup_s": 4.86,
+    "k_max": 6,
+    "k_name": "tsim largest component width",
+    "shots": 71875650,
+    "seconds": 0.158,
+    "detection_rate": 0.0313,
+    "observable_rate": 0.501,
+    "suspect": false,
+    "kept": 0.05185
+   },
+   "tsim-cuda|post-off": {
+    "shots_per_s": 118800000.0,
+    "compile_s": 10.6,
+    "warmup_s": 4.66,
+    "k_max": 6,
+    "k_name": "tsim largest component width",
+    "shots": 2542540,
+    "seconds": 0.02116,
+    "detection_rate": 0.0349,
+    "observable_rate": 0.5,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "clifft-1t": {
+    "shots_per_s": 67270.0,
+    "compile_s": 1.32,
+    "warmup_s": 0.311,
+    "k_max": 10,
+    "k_name": "clifft peak_active_width",
+    "shots": 262144,
+    "seconds": 3.897,
+    "detection_rate": null,
+    "observable_rate": 0.503,
+    "suspect": false,
+    "kept": 0.05232
+   },
+   "clifft-1t|post-off": {
+    "shots_per_s": 60080.0,
+    "compile_s": 1.32,
+    "warmup_s": 0.317,
+    "k_max": 10,
+    "k_name": "clifft peak_active_width",
+    "shots": 131072,
+    "seconds": 2.182,
+    "detection_rate": 0.0349,
+    "observable_rate": 0.5,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "clifft-mt": {
+    "shots_per_s": 659400.0,
+    "compile_s": 1.34,
+    "warmup_s": 0.258,
+    "k_max": 10,
+    "k_name": "clifft peak_active_width",
+    "shots": 2097152,
+    "seconds": 3.18,
+    "detection_rate": null,
+    "observable_rate": 0.503,
+    "suspect": false,
+    "kept": 0.05189
+   },
+   "clifft-mt|post-off": {
+    "shots_per_s": 405300.0,
+    "compile_s": 1.34,
+    "warmup_s": 0.261,
+    "k_max": 10,
+    "k_name": "clifft peak_active_width",
+    "shots": 382932,
+    "seconds": 0.9449,
+    "detection_rate": 0.0349,
+    "observable_rate": 0.499,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "symft-1t": {
+    "shots_per_s": 87650.0,
+    "compile_s": 1.38,
+    "warmup_s": 0.0009,
+    "k_max": 10,
+    "k_name": "symft max_active_qubits",
+    "shots": 262144,
+    "seconds": 2.991,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": null,
+    "kept": 0.0,
+    "post_note": "SymFT postselects all detectors or none: used all 2744 (manifest: 135)"
+   },
+   "symft-1t|post-off": {
+    "shots_per_s": 17580.0,
+    "compile_s": 0.304,
+    "warmup_s": 0.0014,
+    "k_max": 10,
+    "k_name": "symft max_active_qubits",
+    "shots": 65536,
+    "seconds": 3.729,
+    "detection_rate": 0.0349,
+    "observable_rate": 0.5,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "symft-mt": {
+    "shots_per_s": 356500.0,
+    "compile_s": 1.46,
+    "warmup_s": 0.0012,
+    "k_max": 10,
+    "k_name": "symft max_active_qubits",
+    "shots": 1048576,
+    "seconds": 2.942,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": null,
+    "kept": 0.0,
+    "post_note": "SymFT postselects all detectors or none: used all 2744 (manifest: 135)"
+   },
+   "symft-mt|post-off": {
+    "shots_per_s": 62030.0,
+    "compile_s": 4.16,
+    "warmup_s": 0.008,
+    "k_max": 10,
+    "k_name": "symft max_active_qubits",
+    "shots": 131072,
+    "seconds": 2.113,
+    "detection_rate": 0.0349,
+    "observable_rate": 0.5,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-1t": {
+    "shots_per_s": 1401000.0,
+    "compile_s": 2.08,
+    "warmup_s": 0.132,
+    "k_max": null,
+    "k_name": null,
+    "shots": 4194304,
+    "seconds": 2.994,
+    "detection_rate": 0.0313,
+    "observable_rate": 0.502,
+    "suspect": false,
+    "kept": 0.05183
+   },
+   "xtim-1t|post-off": {
+    "shots_per_s": 1061000.0,
+    "compile_s": 2.09,
+    "warmup_s": 2.14,
+    "k_max": null,
+    "k_name": null,
+    "shots": 2097152,
+    "seconds": 1.977,
+    "detection_rate": 0.0349,
+    "observable_rate": 0.5,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-mt": {
+    "shots_per_s": 7401000.0,
+    "compile_s": 2.13,
+    "warmup_s": 0.138,
+    "k_max": null,
+    "k_name": null,
+    "shots": 6242685,
+    "seconds": 0.8435,
+    "detection_rate": 0.0313,
+    "observable_rate": 0.501,
+    "suspect": false,
+    "kept": 0.05189,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "xtim-mt|post-off": {
+    "shots_per_s": 6664000.0,
+    "compile_s": 2.12,
+    "warmup_s": 2.17,
+    "k_max": null,
+    "k_name": null,
+    "shots": 6242685,
+    "seconds": 0.9368,
+    "detection_rate": 0.0349,
+    "observable_rate": 0.499,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "magna-1t": {
+    "shots_per_s": 25540.0,
+    "compile_s": 0.511,
+    "warmup_s": 0.0021,
+    "k_max": null,
+    "k_name": null,
+    "shots": 65536,
+    "seconds": 2.566,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.05196
+   },
+   "magna-1t|post-off": {
+    "shots_per_s": 16280.0,
+    "compile_s": 0.511,
+    "warmup_s": 0.0027,
+    "k_max": null,
+    "k_name": null,
+    "shots": 32768,
+    "seconds": 2.013,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-mt": {
+    "shots_per_s": 255500.0,
+    "compile_s": 0.557,
+    "warmup_s": 0.0047,
+    "k_max": null,
+    "k_name": null,
+    "shots": 524288,
+    "seconds": 2.052,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.05211
+   },
+   "magna-mt|post-off": {
+    "shots_per_s": 152100.0,
+    "compile_s": 0.551,
+    "warmup_s": 0.0053,
+    "k_max": null,
+    "k_name": null,
+    "shots": 524288,
+    "seconds": 3.448,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-cuda": {
+    "error": "unsupported: CUDA non-Clifford histogram dimension exceeds 12; no CPU fallback"
+   },
+   "magna-cuda|post-off": {
+    "error": "unsupported: CUDA non-Clifford histogram dimension exceeds 12; no CPU fallback"
+   }
+  },
+  "papers/2509.05212_fold_transversal_cultivation/stim/fold-d5_native_T_p0.001.stim": {
+   "tsim-cpu-1t": {
+    "shots_per_s": 4298000.0,
+    "compile_s": 1.02,
+    "warmup_s": 0.442,
+    "k_max": 8,
+    "k_name": "tsim largest component width",
+    "shots": 2097152,
+    "seconds": 0.4835,
+    "detection_rate": 0.0,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.16
+   },
+   "tsim-cpu-1t|post-off": {
+    "shots_per_s": 90170.0,
+    "compile_s": 1.03,
+    "warmup_s": 0.442,
+    "k_max": 8,
+    "k_name": "tsim largest component width",
+    "shots": 57254,
+    "seconds": 0.6334,
+    "detection_rate": 0.0625,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cpu-mt": {
+    "shots_per_s": 33190000.0,
+    "compile_s": 0.529,
+    "warmup_s": 0.158,
+    "k_max": 8,
+    "k_name": "tsim largest component width",
+    "shots": 9099504,
+    "seconds": 0.2734,
+    "detection_rate": 0.0,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.1599
+   },
+   "tsim-cpu-mt|post-off": {
+    "shots_per_s": 262600.0,
+    "compile_s": 0.537,
+    "warmup_s": 0.126,
+    "k_max": 8,
+    "k_name": "tsim largest component width",
+    "shots": 175499,
+    "seconds": 0.6657,
+    "detection_rate": 0.0625,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cuda": {
+    "shots_per_s": 299800000.0,
+    "compile_s": 1.86,
+    "warmup_s": 98.1,
+    "k_max": 8,
+    "k_name": "tsim largest component width",
+    "shots": 86445288,
+    "seconds": 0.2857,
+    "detection_rate": 0.0,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.16
+   },
+   "tsim-cuda|post-off": {
+    "shots_per_s": 82690000.0,
+    "compile_s": 1.86,
+    "warmup_s": 94.1,
+    "k_max": 8,
+    "k_name": "tsim largest component width",
+    "shots": 18199008,
+    "seconds": 0.2168,
+    "detection_rate": 0.0625,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "clifft-1t": {
+    "error": "timeout (300 s)"
+   },
+   "clifft-1t|post-off": {
+    "error": "timeout (300 s)"
+   },
+   "clifft-mt": {
+    "shots_per_s": 35.14,
+    "compile_s": 0.111,
+    "warmup_s": 140.0,
+    "k_max": 22,
+    "k_name": "clifft peak_active_width",
+    "shots": 128,
+    "seconds": 3.643,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.1745
+   },
+   "clifft-mt|post-off": {
+    "error": "timeout (300 s)"
+   },
+   "symft-1t": {
+    "error": "unsupported: Stim operation not supported: CCZ"
+   },
+   "symft-1t|post-off": {
+    "error": "unsupported: Stim operation not supported: CCZ"
+   },
+   "symft-mt": {
+    "error": "unsupported: Stim operation not supported: CCZ"
+   },
+   "symft-mt|post-off": {
+    "error": "unsupported: Stim operation not supported: CCZ"
+   },
+   "xtim-1t": {
+    "shots_per_s": 22210000.0,
+    "compile_s": 0.127,
+    "warmup_s": 0.0033,
+    "k_max": null,
+    "k_name": null,
+    "shots": 67108864,
+    "seconds": 3.022,
+    "detection_rate": 0.0,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.16
+   },
+   "xtim-1t|post-off": {
+    "shots_per_s": 2957000.0,
+    "compile_s": 0.13,
+    "warmup_s": 0.0044,
+    "k_max": null,
+    "k_name": null,
+    "shots": 8388608,
+    "seconds": 2.837,
+    "detection_rate": 0.0625,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-mt": {
+    "shots_per_s": 119300000.0,
+    "compile_s": 0.133,
+    "warmup_s": 0.0038,
+    "k_max": null,
+    "k_name": null,
+    "shots": 143165576,
+    "seconds": 1.2,
+    "detection_rate": 0.0,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.16,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "xtim-mt|post-off": {
+    "shots_per_s": 33610000.0,
+    "compile_s": 0.135,
+    "warmup_s": 0.0048,
+    "k_max": null,
+    "k_name": null,
+    "shots": 67108864,
+    "seconds": 1.997,
+    "detection_rate": 0.0627,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-1t": {
+    "shots_per_s": 236000.0,
+    "compile_s": 0.187,
+    "warmup_s": 0.0005,
+    "k_max": null,
+    "k_name": null,
+    "shots": 524288,
+    "seconds": 2.222,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.1597
+   },
+   "magna-1t|post-off": {
+    "shots_per_s": 155600.0,
+    "compile_s": 0.185,
+    "warmup_s": 0.0005,
+    "k_max": null,
+    "k_name": null,
+    "shots": 524288,
+    "seconds": 3.368,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-mt": {
+    "shots_per_s": 2507000.0,
+    "compile_s": 0.202,
+    "warmup_s": 0.0021,
+    "k_max": null,
+    "k_name": null,
+    "shots": 8388608,
+    "seconds": 3.347,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.16
+   },
+   "magna-mt|post-off": {
+    "shots_per_s": 1551000.0,
+    "compile_s": 0.2,
+    "warmup_s": 0.0024,
+    "k_max": null,
+    "k_name": null,
+    "shots": 4194304,
+    "seconds": 2.704,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-cuda": {
+    "shots_per_s": 40440000.0,
+    "compile_s": 0.201,
+    "warmup_s": 0.438,
+    "k_max": null,
+    "k_name": null,
+    "shots": 134217728,
+    "seconds": 3.319,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.16
+   },
+   "magna-cuda|post-off": {
+    "shots_per_s": 39240000.0,
+    "compile_s": 0.197,
+    "warmup_s": 0.382,
+    "k_max": null,
+    "k_name": null,
+    "shots": 134217728,
+    "seconds": 3.42,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   }
+  },
+  "papers/2503.18657_rp2_cultivation/stim/rp_3_rp_5_T_cult.stim": {
+   "tsim-cpu-1t": {
+    "shots_per_s": 6769000.0,
+    "compile_s": 0.609,
+    "warmup_s": 0.447,
+    "k_max": 10,
+    "k_name": "tsim largest component width",
+    "shots": 2018311,
+    "seconds": 0.2975,
+    "detection_rate": 0.0,
+    "observable_rate": 0.146,
+    "suspect": false,
+    "kept": 0.09472
+   },
+   "tsim-cpu-1t|post-off": {
+    "shots_per_s": 15740.0,
+    "compile_s": 0.612,
+    "warmup_s": 0.478,
+    "k_max": 10,
+    "k_name": "tsim largest component width",
+    "shots": 8192,
+    "seconds": 0.5199,
+    "detection_rate": 0.077,
+    "observable_rate": 0.403,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cpu-mt": {
+    "shots_per_s": 49060000.0,
+    "compile_s": 0.203,
+    "warmup_s": 0.18,
+    "k_max": 10,
+    "k_name": "tsim largest component width",
+    "shots": 12109866,
+    "seconds": 0.2208,
+    "detection_rate": 0.0,
+    "observable_rate": 0.146,
+    "suspect": false,
+    "kept": 0.09448
+   },
+   "tsim-cpu-mt|post-off": {
+    "shots_per_s": 43680.0,
+    "compile_s": 0.197,
+    "warmup_s": 0.19,
+    "k_max": 10,
+    "k_name": "tsim largest component width",
+    "shots": 56934,
+    "seconds": 1.296,
+    "detection_rate": 0.077,
+    "observable_rate": 0.403,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cuda": {
+    "shots_per_s": 273000000.0,
+    "compile_s": 1.38,
+    "warmup_s": 0.297,
+    "k_max": 10,
+    "k_name": "tsim largest component width",
+    "shots": 74677507,
+    "seconds": 0.2734,
+    "detection_rate": 0.0,
+    "observable_rate": 0.146,
+    "suspect": false,
+    "kept": 0.09451
+   },
+   "tsim-cuda|post-off": {
+    "shots_per_s": 44300000.0,
+    "compile_s": 1.4,
+    "warmup_s": 11.2,
+    "k_max": 10,
+    "k_name": "tsim largest component width",
+    "shots": 12109866,
+    "seconds": 0.2734,
+    "detection_rate": 0.077,
+    "observable_rate": 0.403,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "clifft-1t": {
+    "shots_per_s": 5228.0,
+    "compile_s": 0.0505,
+    "warmup_s": 0.77,
+    "k_max": 18,
+    "k_name": "clifft peak_active_width",
+    "shots": 16384,
+    "seconds": 3.134,
+    "detection_rate": null,
+    "observable_rate": 0.146,
+    "suspect": false,
+    "kept": 0.09465
+   },
+   "clifft-1t|post-off": {
+    "shots_per_s": 1147.0,
+    "compile_s": 0.0412,
+    "warmup_s": 3.59,
+    "k_max": 18,
+    "k_name": "clifft peak_active_width",
+    "shots": 4096,
+    "seconds": 3.572,
+    "detection_rate": 0.0772,
+    "observable_rate": 0.404,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "clifft-mt": {
+    "shots_per_s": 41210.0,
+    "compile_s": 0.0529,
+    "warmup_s": 0.11,
+    "k_max": 18,
+    "k_name": "clifft peak_active_width",
+    "shots": 131072,
+    "seconds": 3.18,
+    "detection_rate": null,
+    "observable_rate": 0.145,
+    "suspect": false,
+    "kept": 0.09454
+   },
+   "clifft-mt|post-off": {
+    "shots_per_s": 9139.0,
+    "compile_s": 0.045,
+    "warmup_s": 0.472,
+    "k_max": 18,
+    "k_name": "clifft peak_active_width",
+    "shots": 32768,
+    "seconds": 3.586,
+    "detection_rate": 0.0768,
+    "observable_rate": 0.401,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "symft-1t": {
+    "shots_per_s": 1545.0,
+    "compile_s": 0.0207,
+    "warmup_s": 0.0091,
+    "k_max": 18,
+    "k_name": "symft max_active_qubits",
+    "shots": 4096,
+    "seconds": 2.65,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.09692
+   },
+   "symft-1t|post-off": {
+    "shots_per_s": 401.2,
+    "compile_s": 0.0343,
+    "warmup_s": 0.0403,
+    "k_max": 18,
+    "k_name": "symft max_active_qubits",
+    "shots": 1024,
+    "seconds": 2.553,
+    "detection_rate": 0.0772,
+    "observable_rate": 0.4,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "symft-mt": {
+    "shots_per_s": 9999.0,
+    "compile_s": 0.0381,
+    "warmup_s": 0.0096,
+    "k_max": 18,
+    "k_name": "symft max_active_qubits",
+    "shots": 32768,
+    "seconds": 3.277,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.09569
+   },
+   "symft-mt|post-off": {
+    "shots_per_s": 3485.0,
+    "compile_s": 0.35,
+    "warmup_s": 0.0108,
+    "k_max": 18,
+    "k_name": "symft max_active_qubits",
+    "shots": 8192,
+    "seconds": 2.35,
+    "detection_rate": 0.0773,
+    "observable_rate": 0.399,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-1t": {
+    "shots_per_s": 17570000.0,
+    "compile_s": 0.0474,
+    "warmup_s": 0.0023,
+    "k_max": null,
+    "k_name": null,
+    "shots": 67108864,
+    "seconds": 3.819,
+    "detection_rate": 0.0,
+    "observable_rate": 0.147,
+    "suspect": false,
+    "kept": 0.09453
+   },
+   "xtim-1t|post-off": {
+    "shots_per_s": 1954000.0,
+    "compile_s": 0.0472,
+    "warmup_s": 0.0077,
+    "k_max": null,
+    "k_name": null,
+    "shots": 4194304,
+    "seconds": 2.147,
+    "detection_rate": 0.0771,
+    "observable_rate": 0.402,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-mt": {
+    "shots_per_s": 101500000.0,
+    "compile_s": 0.0503,
+    "warmup_s": 0.0026,
+    "k_max": null,
+    "k_name": null,
+    "shots": 119304647,
+    "seconds": 1.175,
+    "detection_rate": 0.0,
+    "observable_rate": 0.145,
+    "suspect": false,
+    "kept": 0.09452,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "xtim-mt|post-off": {
+    "shots_per_s": 3567000.0,
+    "compile_s": 0.0492,
+    "warmup_s": 0.0081,
+    "k_max": null,
+    "k_name": null,
+    "shots": 8388608,
+    "seconds": 2.352,
+    "detection_rate": 0.0771,
+    "observable_rate": 0.403,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-1t": {
+    "shots_per_s": 156600.0,
+    "compile_s": 0.0458,
+    "warmup_s": 0.0008,
+    "k_max": null,
+    "k_name": null,
+    "shots": 524288,
+    "seconds": 3.347,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.09429
+   },
+   "magna-1t|post-off": {
+    "shots_per_s": 49640.0,
+    "compile_s": 0.0439,
+    "warmup_s": 0.0006,
+    "k_max": null,
+    "k_name": null,
+    "shots": 131072,
+    "seconds": 2.64,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-mt": {
+    "shots_per_s": 1559000.0,
+    "compile_s": 0.0589,
+    "warmup_s": 0.0023,
+    "k_max": null,
+    "k_name": null,
+    "shots": 4194304,
+    "seconds": 2.69,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.09451
+   },
+   "magna-mt|post-off": {
+    "shots_per_s": 472300.0,
+    "compile_s": 0.057,
+    "warmup_s": 0.0019,
+    "k_max": null,
+    "k_name": null,
+    "shots": 1048576,
+    "seconds": 2.22,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-cuda": {
+    "error": "unsupported: CUDA non-Clifford histogram dimension exceeds 12; no CPU fallback"
+   },
+   "magna-cuda|post-off": {
+    "error": "unsupported: CUDA non-Clifford histogram dimension exceeds 12; no CPU fallback"
+   }
+  },
+  "papers/2505.13587_correlated_decoding_distillation/stim/distillation_15to1_T_d5_p0.001.stim": {
+   "tsim-cpu-1t": {
+    "shots_per_s": 1524000.0,
+    "compile_s": 3.46,
+    "warmup_s": 0.442,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 480200,
+    "seconds": 0.3131,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "tsim-cpu-1t|post-off": {
+    "shots_per_s": 1524000.0,
+    "compile_s": 3.46,
+    "warmup_s": 0.442,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 480200,
+    "seconds": 0.3131,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "tsim-cpu-mt": {
+    "shots_per_s": 7026000.0,
+    "compile_s": 1.08,
+    "warmup_s": 0.164,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 1380575,
+    "seconds": 0.1948,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "tsim-cpu-mt|post-off": {
+    "shots_per_s": 7026000.0,
+    "compile_s": 1.08,
+    "warmup_s": 0.164,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 1380575,
+    "seconds": 0.1948,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "tsim-cuda": {
+    "shots_per_s": 74600000.0,
+    "compile_s": 4.87,
+    "warmup_s": 1.8,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 3121300,
+    "seconds": 0.04088,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "tsim-cuda|post-off": {
+    "shots_per_s": 74600000.0,
+    "compile_s": 4.87,
+    "warmup_s": 1.8,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 3121300,
+    "seconds": 0.04088,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "clifft-1t": {
+    "shots_per_s": 291800.0,
+    "compile_s": 3.42,
+    "warmup_s": 0.265,
+    "k_max": 4,
+    "k_name": "clifft peak_active_width",
+    "shots": 282266,
+    "seconds": 0.9673,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off",
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "clifft-1t|post-off": {
+    "shots_per_s": 291800.0,
+    "compile_s": 3.42,
+    "warmup_s": 0.265,
+    "k_max": 4,
+    "k_name": "clifft peak_active_width",
+    "shots": 282266,
+    "seconds": 0.9673,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off",
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "clifft-mt": {
+    "shots_per_s": 521900.0,
+    "compile_s": 3.4,
+    "warmup_s": 0.0135,
+    "k_max": 4,
+    "k_name": "clifft peak_active_width",
+    "shots": 282266,
+    "seconds": 0.5408,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off",
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "clifft-mt|post-off": {
+    "shots_per_s": 521900.0,
+    "compile_s": 3.4,
+    "warmup_s": 0.0135,
+    "k_max": 4,
+    "k_name": "clifft peak_active_width",
+    "shots": 282266,
+    "seconds": 0.5408,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off",
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "symft-1t": {
+    "shots_per_s": 3766.0,
+    "compile_s": 0.113,
+    "warmup_s": 0.0044,
+    "k_max": 15,
+    "k_name": "symft max_active_qubits",
+    "shots": 8192,
+    "seconds": 2.175,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "symft-1t|post-off": {
+    "shots_per_s": 3766.0,
+    "compile_s": 0.113,
+    "warmup_s": 0.0044,
+    "k_max": 15,
+    "k_name": "symft max_active_qubits",
+    "shots": 8192,
+    "seconds": 2.175,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "symft-mt": {
+    "shots_per_s": 17300.0,
+    "compile_s": 1.39,
+    "warmup_s": 0.0085,
+    "k_max": 15,
+    "k_name": "symft max_active_qubits",
+    "shots": 65536,
+    "seconds": 3.788,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "symft-mt|post-off": {
+    "shots_per_s": 17300.0,
+    "compile_s": 1.39,
+    "warmup_s": 0.0085,
+    "k_max": 15,
+    "k_name": "symft max_active_qubits",
+    "shots": 65536,
+    "seconds": 3.788,
+    "detection_rate": 0.0121,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "xtim-1t": {
+    "error": "timeout (300 s)",
+    "note": "diagnostic: xtim.compile_twirl_sampler alone did not finish within 200 s on this circuit (4472 detectors)"
+   },
+   "xtim-1t|post-off": {
+    "error": "timeout (300 s)",
+    "note": "diagnostic: xtim.compile_twirl_sampler alone did not finish within 200 s on this circuit (4472 detectors)"
+   },
+   "xtim-mt": {
+    "error": "timeout (300 s)",
+    "note": "diagnostic: xtim.compile_twirl_sampler alone did not finish within 200 s on this circuit (4472 detectors)"
+   },
+   "xtim-mt|post-off": {
+    "error": "timeout (300 s)",
+    "note": "diagnostic: xtim.compile_twirl_sampler alone did not finish within 200 s on this circuit (4472 detectors)"
+   },
+   "magna-1t": {
+    "shots_per_s": 115500.0,
+    "compile_s": 0.225,
+    "warmup_s": 0.0009,
+    "k_max": null,
+    "k_name": null,
+    "shots": 262144,
+    "seconds": 2.27,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "magna-1t|post-off": {
+    "shots_per_s": 115500.0,
+    "compile_s": 0.225,
+    "warmup_s": 0.0009,
+    "k_max": null,
+    "k_name": null,
+    "shots": 262144,
+    "seconds": 2.27,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "magna-mt": {
+    "shots_per_s": 1146000.0,
+    "compile_s": 0.251,
+    "warmup_s": 0.0029,
+    "k_max": null,
+    "k_name": null,
+    "shots": 4194304,
+    "seconds": 3.662,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "magna-mt|post-off": {
+    "shots_per_s": 1146000.0,
+    "compile_s": 0.251,
+    "warmup_s": 0.0029,
+    "k_max": null,
+    "k_name": null,
+    "shots": 4194304,
+    "seconds": 3.662,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "magna-cuda": {
+    "shots_per_s": 928400.0,
+    "compile_s": 0.407,
+    "warmup_s": 0.394,
+    "k_max": null,
+    "k_name": null,
+    "shots": 2097152,
+    "seconds": 2.259,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "magna-cuda|post-off": {
+    "shots_per_s": 928400.0,
+    "compile_s": 0.407,
+    "warmup_s": 0.394,
+    "k_max": null,
+    "k_name": null,
+    "shots": 2097152,
+    "seconds": 2.259,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   }
+  },
+  "papers/2610.06811_merlin/stim/distillation_bh10_p0.001.stim": {
+   "tsim-cpu-1t": {
+    "shots_per_s": 47970000.0,
+    "compile_s": 0.0815,
+    "warmup_s": 0.45,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 21192270,
+    "seconds": 0.3494,
+    "detection_rate": 0.0,
+    "observable_rate": 2.85e-05,
+    "suspect": false,
+    "kept": 0.9629
+   },
+   "tsim-cpu-1t|post-off": {
+    "shots_per_s": 78660000.0,
+    "compile_s": 0.0812,
+    "warmup_s": 0.46,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 35320450,
+    "seconds": 0.3312,
+    "detection_rate": 0.00197,
+    "observable_rate": 0.00688,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cpu-mt": {
+    "shots_per_s": 317300000.0,
+    "compile_s": 0.0262,
+    "warmup_s": 0.154,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 84769080,
+    "seconds": 0.2548,
+    "detection_rate": 0.0,
+    "observable_rate": 2.85e-05,
+    "suspect": false,
+    "kept": 0.9628
+   },
+   "tsim-cpu-mt|post-off": {
+    "shots_per_s": 696900000.0,
+    "compile_s": 0.0259,
+    "warmup_s": 0.177,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 134217710,
+    "seconds": 0.188,
+    "detection_rate": 0.00197,
+    "observable_rate": 0.00688,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cuda": {
+    "shots_per_s": 8305000000.0,
+    "compile_s": 0.599,
+    "warmup_s": 0.404,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 211922700,
+    "seconds": 0.02477,
+    "detection_rate": 0.0,
+    "observable_rate": 2.85e-05,
+    "suspect": false,
+    "kept": 0.9628
+   },
+   "tsim-cuda|post-off": {
+    "shots_per_s": 8482000000.0,
+    "compile_s": 0.695,
+    "warmup_s": 2.12,
+    "k_max": 4,
+    "k_name": "tsim largest component width",
+    "shots": 176602250,
+    "seconds": 0.02081,
+    "detection_rate": 0.00197,
+    "observable_rate": 0.00688,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "clifft-1t": {
+    "shots_per_s": 577600000.0,
+    "compile_s": 0.0056,
+    "warmup_s": 0.25,
+    "k_max": 0,
+    "k_name": "clifft peak_active_width",
+    "shots": 2147483648,
+    "seconds": 3.718,
+    "detection_rate": null,
+    "observable_rate": 3.14e-05,
+    "suspect": false,
+    "kept": 0.9628
+   },
+   "clifft-1t|post-off": {
+    "shots_per_s": 44530000.0,
+    "compile_s": 0.0055,
+    "warmup_s": 0.25,
+    "k_max": 0,
+    "k_name": "clifft peak_active_width",
+    "shots": 28256363,
+    "seconds": 0.6346,
+    "detection_rate": 0.00196,
+    "observable_rate": 0.00683,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "clifft-mt": {
+    "shots_per_s": 5789000000.0,
+    "compile_s": 0.0061,
+    "warmup_s": 0.25,
+    "k_max": 0,
+    "k_name": "clifft peak_active_width",
+    "shots": 17179869184,
+    "seconds": 2.968,
+    "detection_rate": null,
+    "observable_rate": 3.14e-05,
+    "suspect": false,
+    "kept": 0.9628
+   },
+   "clifft-mt|post-off": {
+    "shots_per_s": 71150000.0,
+    "compile_s": 0.0058,
+    "warmup_s": 0.25,
+    "k_max": 0,
+    "k_name": "clifft peak_active_width",
+    "shots": 28256363,
+    "seconds": 0.3971,
+    "detection_rate": 0.00198,
+    "observable_rate": 0.00689,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "symft-1t": {
+    "shots_per_s": 12320.0,
+    "compile_s": 0.0014,
+    "warmup_s": 0.0013,
+    "k_max": 13,
+    "k_name": "symft max_active_qubits",
+    "shots": 32768,
+    "seconds": 2.66,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.9626
+   },
+   "symft-1t|post-off": {
+    "shots_per_s": 34200.0,
+    "compile_s": 0.0067,
+    "warmup_s": 0.0006,
+    "k_max": 13,
+    "k_name": "symft max_active_qubits",
+    "shots": 131072,
+    "seconds": 3.833,
+    "detection_rate": 0.00193,
+    "observable_rate": 0.00696,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "symft-mt": {
+    "shots_per_s": 127000.0,
+    "compile_s": 0.0036,
+    "warmup_s": 0.0014,
+    "k_max": 13,
+    "k_name": "symft max_active_qubits",
+    "shots": 262144,
+    "seconds": 2.063,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.9629
+   },
+   "symft-mt|post-off": {
+    "shots_per_s": 338800.0,
+    "compile_s": 0.0144,
+    "warmup_s": 0.0021,
+    "k_max": 13,
+    "k_name": "symft max_active_qubits",
+    "shots": 1048576,
+    "seconds": 3.095,
+    "detection_rate": 0.00196,
+    "observable_rate": 0.00693,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-1t": {
+    "shots_per_s": 87750000.0,
+    "compile_s": 0.0173,
+    "warmup_s": 0.0003,
+    "k_max": null,
+    "k_name": null,
+    "shots": 268435456,
+    "seconds": 3.059,
+    "detection_rate": 0.0,
+    "observable_rate": 3.58e-05,
+    "suspect": false,
+    "kept": 0.9628
+   },
+   "xtim-1t|post-off": {
+    "shots_per_s": 88770000.0,
+    "compile_s": 0.0173,
+    "warmup_s": 0.0003,
+    "k_max": null,
+    "k_name": null,
+    "shots": 268435456,
+    "seconds": 3.024,
+    "detection_rate": 0.00196,
+    "observable_rate": 0.00688,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-mt": {
+    "shots_per_s": 174600000.0,
+    "compile_s": 0.0181,
+    "warmup_s": 0.0005,
+    "k_max": null,
+    "k_name": null,
+    "shots": 357913941,
+    "seconds": 2.05,
+    "detection_rate": 0.0,
+    "observable_rate": 3.2e-05,
+    "suspect": false,
+    "kept": 0.9628
+   },
+   "xtim-mt|post-off": {
+    "shots_per_s": 424600000.0,
+    "compile_s": 0.018,
+    "warmup_s": 0.0005,
+    "k_max": null,
+    "k_name": null,
+    "shots": 357913941,
+    "seconds": 0.8428,
+    "detection_rate": 0.00196,
+    "observable_rate": 0.00684,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "magna-1t": {
+    "shots_per_s": 160400.0,
+    "compile_s": 0.0372,
+    "warmup_s": 0.0003,
+    "k_max": null,
+    "k_name": null,
+    "shots": 524288,
+    "seconds": 3.269,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.9628
+   },
+   "magna-1t|post-off": {
+    "shots_per_s": 170600.0,
+    "compile_s": 0.0365,
+    "warmup_s": 0.0003,
+    "k_max": null,
+    "k_name": null,
+    "shots": 524288,
+    "seconds": 3.074,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-mt": {
+    "shots_per_s": 1710000.0,
+    "compile_s": 0.0492,
+    "warmup_s": 0.0014,
+    "k_max": null,
+    "k_name": null,
+    "shots": 4194304,
+    "seconds": 2.453,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.9628
+   },
+   "magna-mt|post-off": {
+    "shots_per_s": 1747000.0,
+    "compile_s": 0.0485,
+    "warmup_s": 0.0016,
+    "k_max": null,
+    "k_name": null,
+    "shots": 4194304,
+    "seconds": 2.401,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-cuda": {
+    "shots_per_s": 325000000.0,
+    "compile_s": 0.04,
+    "warmup_s": 0.489,
+    "k_max": null,
+    "k_name": null,
+    "shots": 1073741824,
+    "seconds": 3.304,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.9628
+   },
+   "magna-cuda|post-off": {
+    "shots_per_s": 433700000.0,
+    "compile_s": 0.0387,
+    "warmup_s": 0.448,
+    "k_max": null,
+    "k_name": null,
+    "shots": 1073741824,
+    "seconds": 2.476,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   }
+  },
+  "papers/2610.22315_magna/stim/bh100-T.stim": {
+   "tsim-cpu-1t": {
+    "shots_per_s": 303500.0,
+    "compile_s": 0.734,
+    "warmup_s": 0.467,
+    "k_max": 3,
+    "k_name": "tsim largest component width",
+    "shots": 131072,
+    "seconds": 0.4308,
+    "detection_rate": 0.0,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.7463
+   },
+   "tsim-cpu-1t|post-off": {
+    "shots_per_s": 300300.0,
+    "compile_s": 0.736,
+    "warmup_s": 0.451,
+    "k_max": 3,
+    "k_name": "tsim largest component width",
+    "shots": 131072,
+    "seconds": 0.4332,
+    "detection_rate": 0.114,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cpu-mt": {
+    "shots_per_s": 1150000.0,
+    "compile_s": 0.577,
+    "warmup_s": 0.158,
+    "k_max": 3,
+    "k_name": "tsim largest component width",
+    "shots": 1048576,
+    "seconds": 0.624,
+    "detection_rate": 0.0,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.7466
+   },
+   "tsim-cpu-mt|post-off": {
+    "shots_per_s": 1186000.0,
+    "compile_s": 0.475,
+    "warmup_s": 0.15,
+    "k_max": 3,
+    "k_name": "tsim largest component width",
+    "shots": 899495,
+    "seconds": 0.5756,
+    "detection_rate": 0.114,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cuda": {
+    "shots_per_s": 1625000000.0,
+    "compile_s": 1.33,
+    "warmup_s": 6.42,
+    "k_max": 3,
+    "k_name": "tsim largest component width",
+    "shots": 357913940,
+    "seconds": 0.2191,
+    "detection_rate": 0.0,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.7466
+   },
+   "tsim-cuda|post-off": {
+    "shots_per_s": 1659000000.0,
+    "compile_s": 1.32,
+    "warmup_s": 6.44,
+    "k_max": 3,
+    "k_name": "tsim largest component width",
+    "shots": 357913940,
+    "seconds": 0.2145,
+    "detection_rate": 0.114,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "clifft-1t": {
+    "error": "unsupported: active width too large: sampling planner active width would reach 60, but the dense-state limi..."
+   },
+   "clifft-1t|post-off": {
+    "error": "unsupported: active width too large: sampling planner active width would reach 60, but the dense-state limi..."
+   },
+   "clifft-mt": {
+    "error": "unsupported: active width too large: sampling planner active width would reach 60, but the dense-state limi..."
+   },
+   "clifft-mt|post-off": {
+    "error": "unsupported: active width too large: sampling planner active width would reach 60, but the dense-state limi..."
+   },
+   "symft-1t": {
+    "error": "unsupported: active width too large: active qubit count is too large for machine basis indices"
+   },
+   "symft-1t|post-off": {
+    "error": "unsupported: active width too large: active qubit count is too large for machine basis indices"
+   },
+   "symft-mt": {
+    "error": "unsupported: active width too large: active qubit count is too large for machine basis indices"
+   },
+   "symft-mt|post-off": {
+    "error": "unsupported: active width too large: active qubit count is too large for machine basis indices"
+   },
+   "xtim-1t": {
+    "error": "unsupported: magic branch rank 408 > xtim engine limit 30 (chi <= 2^30 stabilizer branches)"
+   },
+   "xtim-1t|post-off": {
+    "error": "unsupported: magic branch rank 408 > xtim engine limit 30 (chi <= 2^30 stabilizer branches)"
+   },
+   "xtim-mt": {
+    "error": "unsupported: magic branch rank 408 > xtim engine limit 30 (chi <= 2^30 stabilizer branches)",
+    "note": "not run: same refusal as the 1t cell"
+   },
+   "xtim-mt|post-off": {
+    "error": "unsupported: magic branch rank 408 > xtim engine limit 30 (chi <= 2^30 stabilizer branches)",
+    "note": "not run: same refusal as the 1t cell"
+   },
+   "magna-1t": {
+    "shots_per_s": 62530.0,
+    "compile_s": 0.178,
+    "warmup_s": 0.0007,
+    "k_max": null,
+    "k_name": null,
+    "shots": 131072,
+    "seconds": 2.096,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.7465
+   },
+   "magna-1t|post-off": {
+    "shots_per_s": 61890.0,
+    "compile_s": 0.173,
+    "warmup_s": 0.0007,
+    "k_max": null,
+    "k_name": null,
+    "shots": 131072,
+    "seconds": 2.118,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-mt": {
+    "shots_per_s": 635200.0,
+    "compile_s": 0.197,
+    "warmup_s": 0.0023,
+    "k_max": null,
+    "k_name": null,
+    "shots": 2097152,
+    "seconds": 3.302,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.7466
+   },
+   "magna-mt|post-off": {
+    "shots_per_s": 616200.0,
+    "compile_s": 0.193,
+    "warmup_s": 0.0027,
+    "k_max": null,
+    "k_name": null,
+    "shots": 2097152,
+    "seconds": 3.403,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-cuda": {
+    "shots_per_s": 5941000.0,
+    "compile_s": 0.195,
+    "warmup_s": 0.397,
+    "k_max": null,
+    "k_name": null,
+    "shots": 16777216,
+    "seconds": 2.824,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.7467
+   },
+   "magna-cuda|post-off": {
+    "shots_per_s": 6638000.0,
+    "compile_s": 0.187,
+    "warmup_s": 0.36,
+    "k_max": null,
+    "k_name": null,
+    "shots": 16777216,
+    "seconds": 2.527,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   }
+  },
+  "papers/2610.06811_merlin/stim/code_switching_bt27_p0.001.stim": {
+   "tsim-cpu-1t": {
+    "shots_per_s": 0.2301,
+    "compile_s": 0.159,
+    "warmup_s": 81.0,
+    "k_max": 26,
+    "k_name": "tsim largest component width",
+    "shots": 16,
+    "seconds": 69.44,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.9688,
+    "note": "each tsim-dev round (fresh process: compile, ~81 s warm-up, 3 calls of 16 shots) stayed under its 300 s cap; the whole 3-round tsim-dev run took ~12 min wall"
+   },
+   "tsim-cpu-1t|post-off": {
+    "error": "timeout (300 s)"
+   },
+   "tsim-cpu-mt": {
+    "error": "timeout (300 s)"
+   },
+   "tsim-cpu-mt|post-off": {
+    "error": "timeout (300 s)"
+   },
+   "tsim-cuda": {
+    "error": "unsupported (k_max > 11): Tsim k_max 26"
+   },
+   "tsim-cuda|post-off": {
+    "error": "unsupported (k_max > 11): Tsim k_max 26"
+   },
+   "clifft-1t": {
+    "error": "timeout (300 s)"
+   },
+   "clifft-1t|post-off": {
+    "error": "timeout (300 s)"
+   },
+   "clifft-mt": {
+    "error": "timeout (300 s)"
+   },
+   "clifft-mt|post-off": {
+    "error": "timeout (300 s)"
+   },
+   "symft-1t": {
+    "error": "out of memory"
+   },
+   "symft-1t|post-off": {
+    "error": "out of memory"
+   },
+   "symft-mt": {
+    "error": "out of memory"
+   },
+   "symft-mt|post-off": {
+    "error": "out of memory"
+   },
+   "xtim-1t": {
+    "shots_per_s": 72670000.0,
+    "compile_s": 0.0405,
+    "warmup_s": 0.001,
+    "k_max": null,
+    "k_name": null,
+    "shots": 195225786,
+    "seconds": 2.687,
+    "detection_rate": 0.0,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.9222
+   },
+   "xtim-1t|post-off": {
+    "shots_per_s": 58120000.0,
+    "compile_s": 0.0403,
+    "warmup_s": 0.0008,
+    "k_max": null,
+    "k_name": null,
+    "shots": 134217728,
+    "seconds": 2.309,
+    "detection_rate": 0.00608,
+    "observable_rate": 0.0208,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-mt": {
+    "shots_per_s": 164900000.0,
+    "compile_s": 0.043,
+    "warmup_s": 0.0011,
+    "k_max": null,
+    "k_name": null,
+    "shots": 195225786,
+    "seconds": 1.184,
+    "detection_rate": 0.0,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.9222,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "xtim-mt|post-off": {
+    "shots_per_s": 322800000.0,
+    "compile_s": 0.043,
+    "warmup_s": 0.001,
+    "k_max": null,
+    "k_name": null,
+    "shots": 195225786,
+    "seconds": 0.6047,
+    "detection_rate": 0.00607,
+    "observable_rate": 0.0208,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "magna-1t": {
+    "shots_per_s": 85310.0,
+    "compile_s": 0.0889,
+    "warmup_s": 0.0005,
+    "k_max": null,
+    "k_name": null,
+    "shots": 262144,
+    "seconds": 3.073,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.9224
+   },
+   "magna-1t|post-off": {
+    "shots_per_s": 81730.0,
+    "compile_s": 0.0855,
+    "warmup_s": 0.0005,
+    "k_max": null,
+    "k_name": null,
+    "shots": 262144,
+    "seconds": 3.207,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-mt": {
+    "shots_per_s": 862300.0,
+    "compile_s": 0.1,
+    "warmup_s": 0.0016,
+    "k_max": null,
+    "k_name": null,
+    "shots": 2097152,
+    "seconds": 2.432,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.9222
+   },
+   "magna-mt|post-off": {
+    "shots_per_s": 825500.0,
+    "compile_s": 0.0967,
+    "warmup_s": 0.0023,
+    "k_max": null,
+    "k_name": null,
+    "shots": 2097152,
+    "seconds": 2.541,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-cuda": {
+    "error": "unsupported: Magna CUDA sampler refuses this task (CUDA large query has varying quadratic geometry on the n..."
+   },
+   "magna-cuda|post-off": {
+    "shots_per_s": 17320000.0,
+    "compile_s": 0.0884,
+    "warmup_s": 0.514,
+    "k_max": null,
+    "k_name": null,
+    "shots": 67108864,
+    "seconds": 3.875,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   }
+  },
+  "papers/2610.06811_merlin/stim/code_switching_bt81_p0.001.stim": {
+   "tsim-cpu-1t": {
+    "error": "unsupported: Tsim refuses: strategy='active_statevector' needs 63 active qubits for one component (limit 30..."
+   },
+   "tsim-cpu-1t|post-off": {
+    "error": "unsupported: Tsim refuses: strategy='active_statevector' needs 63 active qubits for one component (limit 30..."
+   },
+   "tsim-cpu-mt": {
+    "error": "unsupported: Tsim refuses: strategy='active_statevector' needs 63 active qubits for one component (limit 30..."
+   },
+   "tsim-cpu-mt|post-off": {
+    "error": "unsupported: Tsim refuses: strategy='active_statevector' needs 63 active qubits for one component (limit 30..."
+   },
+   "tsim-cuda": {
+    "error": "unsupported (k_max > 11): Tsim k_max 63"
+   },
+   "tsim-cuda|post-off": {
+    "error": "unsupported (k_max > 11): Tsim k_max 63"
+   },
+   "clifft-1t": {
+    "error": "unsupported: active width too large: interleaved batch allocation exceeds size_t"
+   },
+   "clifft-1t|post-off": {
+    "error": "unsupported: active width too large: interleaved batch allocation exceeds size_t"
+   },
+   "clifft-mt": {
+    "error": "unsupported: active width too large: interleaved batch allocation exceeds size_t"
+   },
+   "clifft-mt|post-off": {
+    "error": "unsupported: active width too large: interleaved batch allocation exceeds size_t"
+   },
+   "symft-1t": {
+    "error": "unsupported: active width too large: Pauli string has too many qubits for active-state basis indexing"
+   },
+   "symft-1t|post-off": {
+    "error": "unsupported: active width too large: Pauli string has too many qubits for active-state basis indexing"
+   },
+   "symft-mt": {
+    "error": "unsupported: active width too large: Pauli string has too many qubits for active-state basis indexing"
+   },
+   "symft-mt|post-off": {
+    "error": "unsupported: active width too large: Pauli string has too many qubits for active-state basis indexing"
+   },
+   "xtim-1t": {
+    "shots_per_s": 42620000.0,
+    "compile_s": 0.358,
+    "warmup_s": 0.0056,
+    "k_max": null,
+    "k_name": null,
+    "shots": 67108864,
+    "seconds": 1.575,
+    "detection_rate": 0.0,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.7841,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "xtim-1t|post-off": {
+    "shots_per_s": 21970000.0,
+    "compile_s": 0.36,
+    "warmup_s": 0.0038,
+    "k_max": null,
+    "k_name": null,
+    "shots": 67108864,
+    "seconds": 3.054,
+    "detection_rate": 0.00868,
+    "observable_rate": 0.0465,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-mt": {
+    "shots_per_s": 103000000.0,
+    "compile_s": 0.379,
+    "warmup_s": 0.0061,
+    "k_max": null,
+    "k_name": null,
+    "shots": 67108864,
+    "seconds": 0.6516,
+    "detection_rate": 0.0,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 0.7841,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "xtim-mt|post-off": {
+    "shots_per_s": 157200000.0,
+    "compile_s": 0.376,
+    "warmup_s": 0.0041,
+    "k_max": null,
+    "k_name": null,
+    "shots": 67108864,
+    "seconds": 0.427,
+    "detection_rate": 0.00868,
+    "observable_rate": 0.0465,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "magna-1t": {
+    "shots_per_s": 48780.0,
+    "compile_s": 0.49,
+    "warmup_s": 0.001,
+    "k_max": null,
+    "k_name": null,
+    "shots": 131072,
+    "seconds": 2.687,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.7848
+   },
+   "magna-1t|post-off": {
+    "shots_per_s": 34970.0,
+    "compile_s": 0.474,
+    "warmup_s": 0.0013,
+    "k_max": null,
+    "k_name": null,
+    "shots": 131072,
+    "seconds": 3.748,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-mt": {
+    "shots_per_s": 498800.0,
+    "compile_s": 0.518,
+    "warmup_s": 0.0033,
+    "k_max": null,
+    "k_name": null,
+    "shots": 1048576,
+    "seconds": 2.102,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 0.7841
+   },
+   "magna-mt|post-off": {
+    "shots_per_s": 316500.0,
+    "compile_s": 0.504,
+    "warmup_s": 0.0033,
+    "k_max": null,
+    "k_name": null,
+    "shots": 1048576,
+    "seconds": 3.313,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "magna-cuda": {
+    "error": "unsupported: Magna CUDA sampler refuses this task (CUDA large query has varying quadratic geometry on the n..."
+   },
+   "magna-cuda|post-off": {
+    "error": "unsupported: Magna CUDA sampler refuses this task (CUDA large query has varying quadratic geometry on the n..."
+   }
+  },
+  "papers/2607.28600_symft/stim/coherent_surface_d5_r5_p1e-3_rz0p02.stim": {
+   "tsim-cpu-1t": {
+    "shots_per_s": 2316.0,
+    "compile_s": 0.925,
+    "warmup_s": 0.478,
+    "k_max": 11,
+    "k_name": "tsim largest component width",
+    "shots": 979,
+    "seconds": 0.4155,
+    "detection_rate": 0.00449,
+    "observable_rate": 0.00983,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "tsim-cpu-1t|post-off": {
+    "shots_per_s": 2316.0,
+    "compile_s": 0.925,
+    "warmup_s": 0.478,
+    "k_max": 11,
+    "k_name": "tsim largest component width",
+    "shots": 979,
+    "seconds": 0.4155,
+    "detection_rate": 0.00443,
+    "observable_rate": 0.00999,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "tsim-cpu-mt": {
+    "shots_per_s": 8930.0,
+    "compile_s": 0.531,
+    "warmup_s": 0.175,
+    "k_max": 11,
+    "k_name": "tsim largest component width",
+    "shots": 4096,
+    "seconds": 0.4483,
+    "detection_rate": 0.00449,
+    "observable_rate": 0.00983,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "tsim-cpu-mt|post-off": {
+    "shots_per_s": 8930.0,
+    "compile_s": 0.531,
+    "warmup_s": 0.175,
+    "k_max": 11,
+    "k_name": "tsim largest component width",
+    "shots": 4096,
+    "seconds": 0.4483,
+    "detection_rate": 0.00443,
+    "observable_rate": 0.00999,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "tsim-cuda": {
+    "shots_per_s": 2562000.0,
+    "compile_s": 1.56,
+    "warmup_s": 12.0,
+    "k_max": 11,
+    "k_name": "tsim largest component width",
+    "shots": 880582,
+    "seconds": 0.343,
+    "detection_rate": 0.00449,
+    "observable_rate": 0.00983,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "tsim-cuda|post-off": {
+    "shots_per_s": 2562000.0,
+    "compile_s": 1.56,
+    "warmup_s": 12.0,
+    "k_max": 11,
+    "k_name": "tsim largest component width",
+    "shots": 880582,
+    "seconds": 0.343,
+    "detection_rate": 0.00443,
+    "observable_rate": 0.00999,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "clifft-1t": {
+    "shots_per_s": 9869.0,
+    "compile_s": 0.0119,
+    "warmup_s": 0.424,
+    "k_max": 13,
+    "k_name": "clifft peak_active_width",
+    "shots": 32768,
+    "seconds": 3.32,
+    "detection_rate": 0.00442,
+    "observable_rate": 0.0103,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "clifft-1t|post-off": {
+    "shots_per_s": 9869.0,
+    "compile_s": 0.0119,
+    "warmup_s": 0.424,
+    "k_max": 13,
+    "k_name": "clifft peak_active_width",
+    "shots": 32768,
+    "seconds": 3.32,
+    "detection_rate": 0.00442,
+    "observable_rate": 0.0103,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "clifft-mt": {
+    "shots_per_s": 87140.0,
+    "compile_s": 0.0123,
+    "warmup_s": 0.0648,
+    "k_max": 13,
+    "k_name": "clifft peak_active_width",
+    "shots": 262144,
+    "seconds": 3.008,
+    "detection_rate": 0.00445,
+    "observable_rate": 0.00994,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "clifft-mt|post-off": {
+    "shots_per_s": 87140.0,
+    "compile_s": 0.0123,
+    "warmup_s": 0.0648,
+    "k_max": 13,
+    "k_name": "clifft peak_active_width",
+    "shots": 262144,
+    "seconds": 3.008,
+    "detection_rate": 0.00445,
+    "observable_rate": 0.00994,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "symft-1t": {
+    "shots_per_s": 29.76,
+    "compile_s": 0.283,
+    "warmup_s": 0.542,
+    "k_max": 22,
+    "k_name": "symft max_active_qubits",
+    "shots": 64,
+    "seconds": 2.151,
+    "detection_rate": 0.00644,
+    "observable_rate": 0.0104,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "symft-1t|post-off": {
+    "shots_per_s": 29.76,
+    "compile_s": 0.283,
+    "warmup_s": 0.542,
+    "k_max": 22,
+    "k_name": "symft max_active_qubits",
+    "shots": 64,
+    "seconds": 2.151,
+    "detection_rate": 0.00644,
+    "observable_rate": 0.0104,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "symft-mt": {
+    "shots_per_s": 25.48,
+    "compile_s": 3.56,
+    "warmup_s": 0.668,
+    "k_max": 22,
+    "k_name": "symft max_active_qubits",
+    "shots": 64,
+    "seconds": 2.512,
+    "detection_rate": 0.00557,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "symft-mt|post-off": {
+    "shots_per_s": 25.48,
+    "compile_s": 3.56,
+    "warmup_s": 0.668,
+    "k_max": 22,
+    "k_name": "symft max_active_qubits",
+    "shots": 64,
+    "seconds": 2.512,
+    "detection_rate": 0.00557,
+    "observable_rate": 0.0,
+    "suspect": false,
+    "kept": 1.0,
+    "post_note": "manifest postselects nothing: on = off"
+   },
+   "xtim-1t": {
+    "error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'"
+   },
+   "xtim-1t|post-off": {
+    "error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'"
+   },
+   "xtim-mt": {
+    "error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'"
+   },
+   "xtim-mt|post-off": {
+    "error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'"
+   },
+   "magna-1t": {
+    "error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates"
+   },
+   "magna-1t|post-off": {
+    "error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates"
+   },
+   "magna-mt": {
+    "error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates"
+   },
+   "magna-mt|post-off": {
+    "error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates"
+   },
+   "magna-cuda": {
+    "error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates"
+   },
+   "magna-cuda|post-off": {
+    "error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates"
+   }
+  },
+  "papers/2509.18294_transversal_star/stim/star_d=9.stim": {
+   "tsim-cpu-1t": {
+    "shots_per_s": 4815000.0,
+    "compile_s": 1.25,
+    "warmup_s": 0.456,
+    "k_max": 2,
+    "k_name": "tsim largest component width",
+    "shots": 1547178,
+    "seconds": 0.32,
+    "detection_rate": 0.00963,
+    "observable_rate": 0.16,
+    "suspect": false,
+    "kept": 0.007948
+   },
+   "tsim-cpu-1t|post-off": {
+    "shots_per_s": 3977000.0,
+    "compile_s": 1.26,
+    "warmup_s": 0.45,
+    "k_max": 2,
+    "k_name": "tsim largest component width",
+    "shots": 1289315,
+    "seconds": 0.3234,
+    "detection_rate": 0.0136,
+    "observable_rate": 0.379,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cpu-mt": {
+    "shots_per_s": 35710000.0,
+    "compile_s": 0.394,
+    "warmup_s": 0.145,
+    "k_max": 2,
+    "k_name": "tsim largest component width",
+    "shots": 9798794,
+    "seconds": 0.2606,
+    "detection_rate": 0.00963,
+    "observable_rate": 0.16,
+    "suspect": false,
+    "kept": 0.007939
+   },
+   "tsim-cpu-mt|post-off": {
+    "shots_per_s": 21200000.0,
+    "compile_s": 0.408,
+    "warmup_s": 0.195,
+    "k_max": 2,
+    "k_name": "tsim largest component width",
+    "shots": 5157260,
+    "seconds": 0.2424,
+    "detection_rate": 0.0136,
+    "observable_rate": 0.379,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "tsim-cuda": {
+    "shots_per_s": 1679000000.0,
+    "compile_s": 2.32,
+    "warmup_s": 1.69,
+    "k_max": 2,
+    "k_name": "tsim largest component width",
+    "shots": 227177303,
+    "seconds": 0.1349,
+    "detection_rate": 0.00963,
+    "observable_rate": 0.16,
+    "suspect": false,
+    "kept": 0.007909
+   },
+   "tsim-cuda|post-off": {
+    "shots_per_s": 316800000.0,
+    "compile_s": 2.29,
+    "warmup_s": 1.67,
+    "k_max": 2,
+    "k_name": "tsim largest component width",
+    "shots": 6704438,
+    "seconds": 0.0209,
+    "detection_rate": 0.0136,
+    "observable_rate": 0.379,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "clifft-1t": {
+    "shots_per_s": 2093000.0,
+    "compile_s": 0.0584,
+    "warmup_s": 0.251,
+    "k_max": 2,
+    "k_name": "clifft peak_active_width",
+    "shots": 4194304,
+    "seconds": 2.004,
+    "detection_rate": null,
+    "observable_rate": 0.16,
+    "suspect": false,
+    "kept": 0.007893
+   },
+   "clifft-1t|post-off": {
+    "shots_per_s": 934300.0,
+    "compile_s": 0.057,
+    "warmup_s": 0.254,
+    "k_max": 2,
+    "k_name": "clifft peak_active_width",
+    "shots": 1012009,
+    "seconds": 1.083,
+    "detection_rate": 0.0136,
+    "observable_rate": 0.379,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "clifft-mt": {
+    "shots_per_s": 19200000.0,
+    "compile_s": 0.0603,
+    "warmup_s": 0.251,
+    "k_max": 2,
+    "k_name": "clifft peak_active_width",
+    "shots": 67108864,
+    "seconds": 3.496,
+    "detection_rate": null,
+    "observable_rate": 0.161,
+    "suspect": false,
+    "kept": 0.00791
+   },
+   "clifft-mt|post-off": {
+    "shots_per_s": 2015000.0,
+    "compile_s": 0.0592,
+    "warmup_s": 0.0061,
+    "k_max": 2,
+    "k_name": "clifft peak_active_width",
+    "shots": 1012009,
+    "seconds": 0.5023,
+    "detection_rate": 0.0136,
+    "observable_rate": 0.379,
+    "suspect": false,
+    "kept": 1.0,
+    "note": "n hit the 2 GiB output cap before a 2 s call"
+   },
+   "symft-1t": {
+    "shots_per_s": 1143000.0,
+    "compile_s": 0.0611,
+    "warmup_s": 0.0001,
+    "k_max": 9,
+    "k_name": "symft max_active_qubits",
+    "shots": 4194304,
+    "seconds": 3.67,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": null,
+    "kept": 0.000143,
+    "post_note": "SymFT postselects all detectors or none: used all 1040 (manifest: 240)"
+   },
+   "symft-1t|post-off": {
+    "shots_per_s": 81490.0,
+    "compile_s": 0.0402,
+    "warmup_s": 0.0002,
+    "k_max": 9,
+    "k_name": "symft max_active_qubits",
+    "shots": 262144,
+    "seconds": 3.217,
+    "detection_rate": 0.0136,
+    "observable_rate": 0.379,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "symft-mt": {
+    "shots_per_s": 5253000.0,
+    "compile_s": 0.0648,
+    "warmup_s": 0.0001,
+    "k_max": 9,
+    "k_name": "symft max_active_qubits",
+    "shots": 16777216,
+    "seconds": 3.194,
+    "detection_rate": null,
+    "observable_rate": null,
+    "suspect": null,
+    "kept": 0.000142,
+    "post_note": "SymFT postselects all detectors or none: used all 1040 (manifest: 240)"
+   },
+   "symft-mt|post-off": {
+    "shots_per_s": 341600.0,
+    "compile_s": 0.427,
+    "warmup_s": 0.0027,
+    "k_max": 9,
+    "k_name": "symft max_active_qubits",
+    "shots": 1048576,
+    "seconds": 3.07,
+    "detection_rate": 0.0136,
+    "observable_rate": 0.378,
+    "suspect": false,
+    "kept": 1.0
+   },
+   "xtim-1t": {
+    "error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'"
+   },
+   "xtim-1t|post-off": {
+    "error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'"
+   },
+   "xtim-mt": {
+    "error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'"
+   },
+   "xtim-mt|post-off": {
+    "error": "unsupported: rotations (R_Z): parse failed, unknown instruction 'R_Z'"
+   },
+   "magna-1t": {
+    "error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates"
+   },
+   "magna-1t|post-off": {
+    "error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates"
+   },
+   "magna-mt": {
+    "error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates"
+   },
+   "magna-mt|post-off": {
+    "error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates"
+   },
+   "magna-cuda": {
+    "error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates"
+   },
+   "magna-cuda|post-off": {
+    "error": "unsupported: rotations (R_Z); Magna has no arbitrary-angle gates"
+   }
+  }
+ },
+ "generated": "2026-11-20 00:38:43 MST"
+}
