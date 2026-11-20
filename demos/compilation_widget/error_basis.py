@@ -21,6 +21,8 @@ STYLE = """<style>
 .tsim-eb .n { color: #55596b; }
 .tsim-eb .terms { font-family: ui-monospace, Menlo, monospace; font-size: 0.78rem; line-height: 1.7;
   padding: 0.25rem 0 0.4rem 1rem; color: #33364a; }
+.tsim-eb .subs { padding: 0.15rem 0 0.3rem 1rem; }
+.tsim-eb details.sub > summary { cursor: pointer; font-size: 0.82rem; }
 .tsim-eb .terms span[title] { padding: 0 0.15rem; border-radius: 3px; background: #efeaff; cursor: help; }
 </style>"""
 
@@ -82,9 +84,17 @@ def error_basis(circuit, open_rows: int = 0) -> HTML:
             kind = "non-Clifford component" if tcount else "Clifford component"
             summary = (f'<span class="out">{names_out}</span> <span class="n">· {kind} with noise bits</span>'
                        f' <span class="f">{" ".join(f"f{j}" for j in fs)}</span>')
-            body = "<br>".join(f"f{j} = {xor(j)}" for j in fs)
+            body = "".join(
+                f'<details class="sub"><summary><span class="f">f{j}</span>'
+                f' <span class="n">· XOR of {len(transform.rows[j])} error bits</span></summary>'
+                f'<div class="terms">f{j} = {xor(j)}</div></details>'
+                for j in fs
+            )
+        wrapped = body if body.startswith("<details") else f'<div class="terms">{body}</div>'
         rows.append(f'<details class="row"{" open" if len(rows) < open_rows else ""}><summary>{summary}</summary>'
-                    f'<div class="terms">{body}</div></details>')
+                    f'<div class="subs">{wrapped}</div></details>' if body.startswith("<details") else
+                    f'<details class="row"{" open" if len(rows) < open_rows else ""}><summary>{summary}</summary>'
+                    f'{wrapped}</details>')
     summary = f"Noise basis: {builder.num_error_bits} error bits e → {transform.shape[0]} noise bits f"
     return HTML(
         f'{STYLE}<details class="tsim-eb"><summary>{summary}</summary>'
