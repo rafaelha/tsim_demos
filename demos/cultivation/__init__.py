@@ -89,10 +89,10 @@ def _paper() -> list[dict[str, str]]:
         return list(csv.DictReader(f))
 
 
-def plot(tally: list[Point], seconds: float) -> None:
-    """Draw the figure from ``tally``, sampled in ``seconds``, with the paper's data."""
+def plot(tally: list[Point]) -> None:
+    """Draw the figure from ``tally``, with the paper's data."""
     paper = _paper()
-    fig, ax = plt.subplots(figsize=(10, 5), dpi=120)
+    fig, ax = plt.subplots(figsize=(7, 4), dpi=120)
     for gate in GATES:
         color, marker = _STYLE[gate]
         mine = [t for t in tally if t.gate == gate]
@@ -131,7 +131,7 @@ def plot(tally: list[Point], seconds: float) -> None:
     ax.text(
         0.98,
         0.04,
-        f"Tsim: {shots / 1e9:.1f} billion shots in {seconds:.0f} s\n"
+        f"Tsim: {shots / 1e9:.1f} billion shots\n"
         f"paper's vector sim: {paper_shots / 1e9:.1f} billion shots "
         f"in {paper_years:.1f} CPU-years",
         transform=ax.transAxes,
