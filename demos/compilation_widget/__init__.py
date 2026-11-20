@@ -12,6 +12,8 @@ import uuid
 
 from IPython.display import HTML
 
+from compilation_widget.error_basis import error_basis as error_basis
+
 _PAGE = pathlib.Path(__file__).with_name("pauli_program.html")
 
 
