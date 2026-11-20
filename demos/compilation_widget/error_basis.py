@@ -58,29 +58,35 @@ def error_basis(circuit, open_rows: int = 0) -> HTML:
     names = _error_names(circuit.stim_circuit, builder)
     num_detectors = len(builder.detectors)
 
+    def label(port):
+        return f"D{port}" if port < num_detectors else f"L{port - num_detectors}"
+
+    def xor(j):
+        return " ⊕ ".join(f'<span title="{html.escape(names[e])}">e{e}</span>' for e in transform.rows[j])
+
     rows = []
-    for v in sorted(graph.outputs(), key=graph.port):
-        port = graph.port(v)
-        label = f"D{port}" if port < num_detectors else f"L{port - num_detectors}"
-        fs = sorted(basis_index[p] for u in graph.neighbors(v) for p in graph.phase(u).parameters if p in basis_index)
-        if not fs:
-            continue
-        errors = sorted({e for j in fs for e in transform.rows[j]})
-        terms = " ⊕ ".join(f'<span title="{html.escape(names[e])}">e{e}</span>' for e in errors)
-        f_text = " ⊕ ".join(f"f{j}" for j in fs)
-        rows.append(
-            f'<details class="row"{" open" if len(rows) < open_rows else ""}><summary><span class="out">{label}</span>'
-            f' = <span class="f">{f_text}</span> <span class="n">· XOR of {len(errors)} error bits</span></summary>'
-            f'<div class="terms">{f_text} = {terms}</div></details>'
-        )
-    summary = (f"Noise basis: {builder.num_error_bits} error bits e → {transform.shape[0]} noise bits f"
-               f" ({len(rows)} detectors and observables)")
+    components = []
+    for comp in graph.connected_components():
+        ports = sorted(comp.port(v) for v in comp.outputs())
+        fs = sorted({basis_index[p] for v in comp.vertices() for p in comp.phase(v).parameters if p in basis_index})
+        if ports and fs:
+            components.append((ports, fs, zxparam.tcount(comp)))
+    for ports, fs, tcount in sorted(components):
+        names_out = " ".join(label(p) for p in ports)
+        if len(ports) == 1 and len(fs) == 1 and tcount == 0:
+            j = fs[0]
+            summary = (f'<span class="out">{names_out}</span> = <span class="f">f{j}</span>'
+                       f' <span class="n">· XOR of {len(transform.rows[j])} error bits</span>')
+            body = f"f{j} = {xor(j)}"
+        else:
+            kind = "non-Clifford component" if tcount else "Clifford component"
+            summary = (f'<span class="out">{names_out}</span> <span class="n">· {kind} with noise bits</span>'
+                       f' <span class="f">{" ".join(f"f{j}" for j in fs)}</span>')
+            body = "<br>".join(f"f{j} = {xor(j)}" for j in fs)
+        rows.append(f'<details class="row"{" open" if len(rows) < open_rows else ""}><summary>{summary}</summary>'
+                    f'<div class="terms">{body}</div></details>')
+    summary = f"Noise basis: {builder.num_error_bits} error bits e → {transform.shape[0]} noise bits f"
     return HTML(
         f'{STYLE}<details class="tsim-eb"><summary>{summary}</summary>'
-        "<p>Every noise channel gets error bits e (one per independent Pauli it can apply). After ZX"
-        " simplification, Tsim rewrites them in a basis of independent noise bits f = T e: error patterns"
-        " with the same effect on the outputs share a bit. In this Clifford circuit, every detector and"
-        " observable is a single noise bit, the XOR of the error bits that flip it. Expand a row to see them;"
-        " hover an e for its noise instruction.</p>"
         f'<div class="rows">{"".join(rows)}</div></details>'
     )
