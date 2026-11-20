@@ -22,12 +22,26 @@ body {
 /* Additions for this widget */
 .tsb { margin: 0; }
 .tsb__control[hidden] { display: none; }
+.tsb__controls--view { margin-top: -0.35rem; }
+.tsb__stem--dotted {
+  background: repeating-linear-gradient(to right, color-mix(in srgb, var(--tsb-color) 80%, transparent) 0 2px, transparent 2px 5px);
+}
+.tsb__legend-line { display: inline-block; width: 16px; height: 2px; margin-right: -0.15rem; vertical-align: middle; }
+.tsb__legend-line[data-line='solid'] { background: color-mix(in srgb, var(--tsb-color) 60%, transparent); }
+.tsb__legend-line[data-line='dashed'] {
+  background: repeating-linear-gradient(to right, color-mix(in srgb, var(--tsb-color) 70%, transparent) 0 5px, transparent 5px 8px);
+}
+.tsb__legend-line[data-line='dotted'] {
+  background: repeating-linear-gradient(to right, color-mix(in srgb, var(--tsb-color) 80%, transparent) 0 2px, transparent 2px 4px);
+}
+.tsb__ks .is-inferred { font-style: italic; opacity: 0.75; }
 .tsb__s5 { --tsb-color: var(--viz-series-5); }
 .tsb--compare .tsb__head, .tsb--compare .tsb__row {
   grid-template-columns: 13rem 1.6rem minmax(0, 1fr) 4.6rem;
 }
 .tsb__lane-note { left: 0; }
 .tsb__glyph path, .tsb__mark path { fill: var(--tsb-color); }
+.tsb__mark.tsb__ring path, .tsb .tsb__mark.tsb__ring path { fill: var(--color-surface); stroke: var(--tsb-color); stroke-width: 1.5px; }
 </style>
 </head>
 <body>
@@ -52,6 +66,7 @@ body {
       <div class="tsb__segments" role="group" data-setting="post">
         <button type="button" data-value="on" aria-pressed="true">On</button>
         <button type="button" data-value="off" aria-pressed="false">Off</button>
+        <button type="button" data-value="compare" aria-pressed="false">Compare</button>
       </div>
     </div>
     <div class="tsb__control" data-threads-control>
@@ -59,9 +74,18 @@ body {
       <div class="tsb__segments" role="group" data-setting="threads">
         <button type="button" data-value="1t" aria-pressed="true">1</button>
         <button type="button" data-value="mt" aria-pressed="false">__CORES__</button>
+        <button type="button" data-value="compare" aria-pressed="false">Compare</button>
+      </div>
+    </div>
+    <div class="tsb__control" data-view-control>
+      <span class="tsb__control-label">View</span>
+      <div class="tsb__segments" role="group" data-setting="view">
+        <button type="button" data-value="absolute" aria-pressed="true">Absolute</button>
+        <button type="button" data-value="relative" aria-pressed="false">Relative</button>
       </div>
     </div>
   </div>
+  <p class="tsb__note" data-note hidden></p>
   <ul class="tsb__legend" data-legend aria-label="Simulators shown; click to show or hide"></ul>
   <div class="tsb__chart" data-chart data-tip-group>
     <div class="tsb__head" aria-hidden="true">
@@ -83,7 +107,7 @@ body {
 (() => {
   const root = document.querySelector('[data-sim]');
   const data = JSON.parse(document.querySelector('[data-model]').textContent);
-  const state = { mode: 'all', metric: 'sampling', threads: '1t', post: 'on' };
+  const state = { mode: 'all', metric: 'sampling', threads: '1t', post: 'on', view: 'absolute' };
   const hidden = new Set();
 
   const MARKERS = {
@@ -113,30 +137,47 @@ body {
   const sig = (v) => Number(v.toPrecision(3));
   const rate = (v) => v >= 1e9 ? `${sig(v / 1e9)} B` : v >= 1e6 ? `${sig(v / 1e6)} M` : v >= 1e3 ? `${sig(v / 1e3)} k` : `${sig(v)}`;
   const secs = (v) => v >= 1 ? `${sig(v)} s` : `${sig(v * 1e3)} ms`;
-  const fmt = (metric, v) => metric === 'sampling' ? rate(v) : secs(v);
+  const ratio = (v) => v >= 1e4 ? `${rate(v).replace(' ', '')}×` : v >= 100 ? `${Math.round(v).toLocaleString('en-US')}×` : `${sig(v)}×`;
+  const fmt = (v) => state.metric === 'sampling' ? rate(v) : secs(v);
 
-  /** The engines shown in the current mode, each with the result config it reads. */
+  const compare = () => state.metric === 'sampling' ? (state.threads === 'compare' ? 'threads' : state.post === 'compare' ? 'post' : null) : null;
   const engines = () => data.modes[state.mode].map((id) => data.engines[id]);
-  const configOf = (engine) => engine.configs[engine.configs.length === 1 ? 0 : state.threads === '1t' ? 0 : 1];
-  const key = (config, post = state.post) => (post === 'off' ? `${config}|post-off` : config);
-  const cell = (circuit, engine, config = configOf(engine), post = state.post) => (data.cells[circuit.id] || {})[key(config, post)];
-  const value = (c) => (!c || c.error ? null : state.metric === 'sampling' ? c.shots_per_s : c.compile_s);
+  const cellOf = (circuit, engine, threads, post) => {
+    const config = engine.configs[engine.configs.length === 1 ? 0 : threads === 'mt' ? 1 : 0];
+    return (data.cells[circuit.id] || {})[post === 'off' ? `${config}|post-off` : config];
+  };
+  const valueOf = (c) => (!c || c.error ? null : state.metric === 'sampling' ? c.shots_per_s : c.compile_s);
+  /** The target setting (filled mark) and, when comparing, the baseline (open mark). */
+  const target = () => ({ threads: state.threads === 'compare' ? 'mt' : state.threads, post: state.post === 'compare' ? 'on' : state.post });
+  const baseline = () => compare() === 'threads' ? { ...target(), threads: '1t' } : compare() === 'post' ? { ...target(), post: 'off' } : null;
 
-  /* One axis per mode and metric, covering both thread settings, so a toggle moves marks, not the scale. */
-  function axis() {
+  const SETTINGS = [];
+  ['1t', 'mt'].forEach((threads) => ['on', 'off'].forEach((post) => SETTINGS.push({ threads, post })));
+
+  /** Relative: each row's slowest engine at 1× (for compile time, the slowest to compile). */
+  function relatives(circuit, shown, setting) {
+    const vals = shown.map((engine) => valueOf(cellOf(circuit, engine, setting.threads, setting.post)));
+    const ok = vals.filter((v) => v !== null && v > 0);
+    if (!ok.length) return vals.map(() => null);
+    const ref = state.metric === 'sampling' ? Math.min(...ok) : Math.max(...ok);
+    return vals.map((v) => (v === null || v <= 0 ? null : state.metric === 'sampling' ? v / ref : ref / v));
+  }
+
+  /* One axis per mode, metric and view, over every thread and postselection setting, so that
+     toggling a setting moves marks, never the scale. */
+  function axis(shown) {
     const values = [];
     data.circuits.forEach((circuit) =>
-      engines().forEach((engine) =>
-        engine.configs.forEach((config) =>
-          ['on', 'off'].forEach((post) => {
-            const c = cell(circuit, engine, config, post);
-            const v = !c || c.error ? null : state.metric === 'sampling' ? c.shots_per_s : c.compile_s;
-            if (v && v > 0) values.push(v);
-          }),
-        ),
-      ),
+      SETTINGS.forEach((setting) => {
+        if (state.view === 'relative' && !compare()) values.push(...relatives(circuit, shown, setting).filter((v) => v));
+        else shown.forEach((engine) => {
+          const v = valueOf(cellOf(circuit, engine, setting.threads, setting.post));
+          if (v && v > 0) values.push(v);
+        });
+      }),
     );
-    let lo = Math.floor(Math.log10(Math.min(...values)));
+    if (!values.length) return { lo: 0, hi: 1 };
+    let lo = state.view === 'relative' && !compare() ? 0 : Math.floor(Math.log10(Math.min(...values)));
     let hi = Math.ceil(Math.log10(Math.max(...values)));
     if (hi - lo < 1) hi = lo + 1;
     return { lo, hi };
@@ -146,7 +187,7 @@ body {
   function shortError(error) {
     if (/timeout/i.test(error)) return 'timeout';
     if (/memory|OOM/i.test(error)) return 'out of memory';
-    if (/k_max|active width|active qubits|too wide|> ?11|limit/i.test(error)) return 'too wide';
+    if (/k_max|active width|active qubits|too wide|too large|> ?11|limit/i.test(error)) return 'too wide';
     if (/rotation/i.test(error)) return 'no rotations';
     if (/unsupported/i.test(error)) return 'unsupported';
     if (/setup/i.test(error)) return 'not installed';
@@ -161,7 +202,9 @@ body {
         const button = el('button', 'tsb__legend-toggle');
         button.type = 'button';
         button.setAttribute('aria-pressed', String(!hidden.has(engine.id)));
-        button.append(glyph(engine), el('span', '', engine.label));
+        const line = el('span', 'tsb__legend-line');
+        line.dataset.line = engine.line;
+        button.append(line, glyph(engine), el('span', '', engine.label));
         button.addEventListener('click', () => {
           if (hidden.has(engine.id)) hidden.delete(engine.id);
           else if (engines().filter((e) => !hidden.has(e.id)).length > 1) hidden.add(engine.id);
@@ -173,35 +216,57 @@ body {
     );
   }
 
+  const LABELS = { threads: { '1t': '1 thread', mt: `${data.cores} threads` }, post: { on: 'postselection on', off: 'postselection off' } };
+
   function render() {
     const shown = engines().filter((engine) => !hidden.has(engine.id));
-    const ax = axis();
+    const cmp = compare();
+    const relative = state.view === 'relative' && !cmp;
+    const ax = axis(shown);
+    const tgt = target();
+    const base = baseline();
+
     root.dataset.metric = state.metric;
-    root.querySelector('[data-threads-control]').hidden = state.metric === 'compile';
+    root.dataset.view = relative ? 'relative' : 'absolute';
+    root.querySelector('[data-threads-control]').hidden = state.metric === 'compile' || state.mode === 'tsim';
     root.querySelector('[data-sampling-control]').hidden = state.metric === 'compile';
+    root.querySelector('[data-view-control]').hidden = !!cmp;
     root.querySelectorAll('[data-setting]').forEach((group) =>
       group.querySelectorAll('button').forEach((button) =>
         button.setAttribute('aria-pressed', String(button.dataset.value === state[group.dataset.setting])),
       ),
     );
+    const note = root.querySelector('[data-note]');
+    note.textContent = cmp
+      ? `Each lane runs from ${LABELS[cmp][base[cmp]]} (open mark) to ${LABELS[cmp][tgt[cmp]]} (filled mark); the value is how many times faster.`
+      : relative
+        ? state.metric === 'sampling' ? 'Each row puts its slowest simulator at 1×.' : 'Each row puts the simulator slowest to compile at 1×.'
+        : '';
+    note.hidden = !note.textContent;
     legend();
 
     const chart = root.querySelector('[data-chart]');
     chart.style.setProperty('--decades', String(ax.hi - ax.lo));
-    root.querySelector('[data-unit]').textContent = state.metric === 'sampling' ? 'shots/s' : 'compile';
+    root.querySelector('[data-unit]').textContent = relative ? (state.metric === 'sampling' ? 'vs slowest' : 'vs slowest') : cmp ? 'speedup' : state.metric === 'sampling' ? 'shots/s' : 'compile';
     const ticks = [];
-    for (let d = ax.lo; d <= ax.hi; d++) {
-      const tick = el('span', 'tsb__tick', state.metric === 'sampling' ? rate(10 ** d).replace(' ', '') : secs(10 ** d));
+    const step = ax.hi - ax.lo > 8 ? 2 : 1;
+    for (let d = ax.lo; d <= ax.hi; d += step) {
+      const label = relative ? ratio(10 ** d) : state.metric === 'sampling' ? rate(10 ** d).replace(' ', '') : secs(10 ** d);
+      const tick = el('span', 'tsb__tick', label);
       tick.style.left = `${position(10 ** d, ax)}%`;
       ticks.push(tick);
     }
     root.querySelector('[data-ticks]').replaceChildren(...ticks);
 
     const rows = data.circuits.map((circuit) => {
-      const readings = shown.map((engine) => ({ engine, c: cell(circuit, engine) }));
-      const values = readings.map(({ c }) => value(c)).filter((v) => v !== null);
-      const best = values.length ? (state.metric === 'sampling' ? Math.max(...values) : Math.min(...values)) : null;
-      const base = state.mode === 'tsim' ? value(cell(circuit, data.engines['tsim-1t'])) : null;
+      const cells = shown.map((engine) => cellOf(circuit, engine, tgt.threads, tgt.post));
+      const bases = shown.map((engine) => (base ? cellOf(circuit, engine, base.threads, base.post) : null));
+      const abs = cells.map(valueOf);
+      const rel = relative ? relatives(circuit, shown, tgt) : null;
+      const plotted = relative ? rel : abs;
+      const ok = plotted.filter((v) => v !== null);
+      const best = ok.length ? (relative || state.metric === 'sampling' ? Math.max(...ok) : Math.min(...ok)) : null;
+      const tsim1 = state.metric === 'sampling' ? valueOf(cellOf(circuit, data.engines['tsim-1t'], '1t', tgt.post)) : null;
 
       const row = el('div', 'tsb__row');
       const name = el('div', 'tsb__name');
@@ -214,43 +279,59 @@ body {
       const vals = el('div', 'tsb__values');
       const tip = { title: circuit.label, meta: [circuit.meta, circuit.paper], items: [] };
 
-      readings.forEach(({ engine, c }) => {
-        const v = value(c);
-        const k = c && !c.error && c.k_max !== null && c.k_max !== undefined ? String(c.k_max) : '';
-        const kSpan = el('span', '', k);
-        if (c && c.k_name) kSpan.title = c.k_name;
+      shown.forEach((engine, i) => {
+        const c = cells[i];
+        const v = plotted[i];
+        const b = bases[i];
+        const bv = base && b && b !== c ? valueOf(b) : null;
+
+        const k = c && !c.error && c.k_max !== null && c.k_max !== undefined ? String(c.k_max) : c && c.k_inferred ? c.k_inferred : '';
+        const kSpan = el('span', c && c.error && c.k_inferred ? 'is-inferred' : '', k);
+        if (c && (c.k_source || c.k_name)) kSpan.title = c.error ? `K ${c.k_source}` : c.k_name;
         ks.append(kSpan);
 
         const lane = el('div', `tsb__lane tsb__s${engine.slot}`);
         lane.dataset.kind = v === null ? 'na' : 'ok';
         if (v !== null) {
           lane.style.setProperty('--x', `${position(v, ax)}%`);
-          lane.append(el('span', 'tsb__stem'), glyph(engine, 'tsb__mark'));
+          const stem = el('span', `tsb__stem${engine.line === 'dashed' ? ' tsb__stem--proxy' : engine.line === 'dotted' ? ' tsb__stem--dotted' : ''}`);
+          lane.append(stem);
+          if (bv !== null) {
+            lane.dataset.compare = '';
+            lane.style.setProperty('--from', `${position(bv, ax)}%`);
+            lane.append(glyph(engine, 'tsb__mark tsb__mark--base tsb__ring'));
+          }
+          lane.append(glyph(engine, 'tsb__mark'));
         } else {
           lane.append(el('span', 'tsb__lane-note', c ? shortError(c.error || '') : 'not run'));
         }
         plot.append(lane);
 
-        const text = v === null ? '–' : fmt(state.metric, v);
-        const span = el('span', v !== null && v === best ? 'is-best' : '', text);
+        let text = '–';
+        if (v !== null) text = cmp ? (bv !== null ? ratio(abs[i] / bv) : '') : relative ? ratio(v) : fmt(v);
+        const span = el('span', !cmp && v !== null && v === best ? 'is-best' : '', text);
         span.dataset.kind = v === null ? 'na' : 'ok';
         vals.append(span);
 
         const notes = [];
         if (c && !c.error) {
+          if (cmp && bv !== null) notes.push(`${LABELS[cmp][base[cmp]]}: ${fmt(bv)} → ${LABELS[cmp][tgt[cmp]]}: ${fmt(abs[i])}`);
+          if (relative) notes.push(state.metric === 'sampling' ? `${rate(abs[i])} shots/s` : `compile ${secs(abs[i])}`);
           if (state.metric === 'sampling') notes.push(`compile ${secs(c.compile_s)}`);
           else notes.push(`${rate(c.shots_per_s)} shots/s`);
-          if (k) notes.push(`${c.k_name || 'K'} = ${k}`);
-          if (state.metric === 'sampling' && typeof c.kept === 'number' && state.post === 'on') notes.push(`${sig(c.kept * 100)}% kept`);
+          if (k) notes.push(`K = ${k}`);
+          if (state.metric === 'sampling' && typeof c.kept === 'number' && tgt.post === 'on') notes.push(`${sig(c.kept * 100)}% kept`);
+          if (c.threads) notes.push(`${c.threads} thread${c.threads === 1 ? '' : 's'}`);
+          if (tsim1 && abs[i] && state.metric === 'sampling' && engine.id !== 'tsim-1t') notes.push(`${ratio(abs[i] / tsim1)} Tsim CPU, 1 thread`);
           if (c.post_note) notes.push(c.post_note);
           if (c.note) notes.push(c.note);
-          if (c.threads) notes.push(`${c.threads} thread${c.threads === 1 ? '' : 's'}`);
-          if (base && v && state.metric === 'sampling' && engine.id !== 'tsim-1t') notes.push(`${sig(v / base)}× Tsim CPU, 1 thread`);
-          if (c.suspect) notes.push('suspect: detection rate differs from Tsim');
+          if (c.suspect) notes.push('suspect: rates differ from Tsim');
         } else if (c && c.error) {
           notes.push(c.error);
+          if (c.k_inferred) notes.push(`K = ${c.k_inferred}, ${c.k_source}`);
         }
-        tip.items.push({ engine, value: text, notes });
+        const value = v === null ? '–' : cmp && bv !== null ? ratio(abs[i] / bv) : relative ? ratio(v) : fmt(abs[i]);
+        tip.items.push({ engine, value, notes });
       });
       plot.dataset.tip = JSON.stringify(tip);
       row.append(name, ks, plot, vals);
@@ -300,7 +381,12 @@ body {
   root.querySelectorAll('[data-setting]').forEach((group) =>
     group.querySelectorAll('button').forEach((button) =>
       button.addEventListener('click', () => {
-        state[group.dataset.setting] = button.dataset.value;
+        const key = group.dataset.setting;
+        state[key] = button.dataset.value;
+        // One comparison at a time: comparing one setting puts the other back on its target.
+        if (key === 'threads' && state.threads === 'compare' && state.post === 'compare') state.post = 'on';
+        if (key === 'post' && state.post === 'compare' && state.threads === 'compare') state.threads = '1t';
+        if (key === 'mode' && state.mode === 'tsim' && state.threads === 'compare') state.threads = '1t';
         render();
       }),
     ),

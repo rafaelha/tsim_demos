@@ -9,6 +9,7 @@ show as "not run".
 
 import json
 import pathlib
+import re
 
 HERE = pathlib.Path(__file__).parent
 OUT = HERE.parents[1] / "demos" / "benchmark_widget" / "sim_comparison.html"
@@ -43,7 +44,8 @@ CIRCUITS = {
         ("Transversal STAR, d=9", "Ismail et al. (2025), arXiv:2509.18294"),
 }
 
-# id: label, color slot, marker shape, result configs (1 thread first, then all cores)
+# id: label, color slot, marker shape, result configs (1 thread first, then all cores).
+# Line style follows the device: CPU solid, Apple GPU dashed, NVIDIA GPU dotted.
 ENGINES = {
     "tsim-cpu": ("Tsim CPU", 1, "circle", ["tsim-cpu-1t", "tsim-cpu-mt"]),
     "tsim-cuda": ("Tsim RTX 5090", 1, "diamond", ["tsim-cuda"]),
@@ -61,6 +63,52 @@ MODES = {
     "all": ["tsim-cpu", "tsim-metal", "tsim-cuda", "clifft", "symft", "xtim", "magna-cpu", "magna-cuda"],
     "tsim": ["tsim-1t", "tsim-mt", "tsim-metal", "tsim-cuda"],
 }
+
+
+BENCH = pathlib.Path(__file__).resolve().parents[3] / "tsim-bench"
+
+
+def recorded_k(path):
+    """tsim-bench's recorded widths of ``path``: {"tsim": k, "clifft": k}, from its paper's k_max.json."""
+    p = pathlib.Path(path)
+    folder = p.parents[1]
+    f = BENCH / folder / "k_max.json"
+    if not f.exists():
+        return {}
+    entry = next((e for e in json.loads(f.read_text()) if e["file"] == str(p.relative_to(folder))), {})
+    return {"tsim": entry.get("tsim_k"), "clifft": entry.get("clifft_k")}
+
+
+def family(config):
+    return "tsim" if config.startswith("tsim") else config.split("-")[0]
+
+
+def infer_k(path, row):
+    """Give failed cells the width their simulator reports elsewhere: another run of the same circuit,
+    tsim-bench's recorded width, or the width named in the error."""
+    known = {}
+    for key, c in row.items():
+        if c.get("k_max") is not None:
+            known.setdefault(family(key.split("|")[0]), c["k_max"])
+    recorded = recorded_k(path)
+    for key, c in row.items():
+        if "error" not in c or c.get("k_max") is not None:
+            continue
+        fam = family(key.split("|")[0])
+        error = c["error"]
+        k, source = known.get(fam), "measured in this simulator's other runs"
+        if k is None and recorded.get(fam) is not None:
+            k, source = recorded[fam], "recorded in tsim-bench"
+        if k is None:
+            m = re.search(r"needs (\d+) active qubits|k_max (\d+)|K = (\d+)", error)
+            if m:
+                k, source = int(next(g for g in m.groups() if g)), "from the error"
+            m = re.search(r"active width would reach (\d+)", error)
+            if m:
+                k, source = f"≥{m.group(1)}", "from the error (planner overflow)"
+        if k is not None:
+            c["k_inferred"] = str(k)
+            c["k_source"] = source
 
 
 def read_tsim_dev(path, post):
@@ -121,6 +169,7 @@ def main():
             "id": path, "label": label, "paper": paper, "url": REPO + path,
             "meta": f"{name}" + (f" · K = {tsim_k}" if tsim_k is not None else ""),
         })
+        infer_k(path, row)
         cells[path] = row
 
     machine = linux.get("machine", {})
@@ -155,15 +204,23 @@ def main():
                    " postselect all detectors or none). Hover a lane for the contract used."),
         ("Checks", "Every simulator's detection, observable and kept rates agree with a separate Tsim run (or xtim / Magna"
                    " where Tsim cannot run) within 5 standard errors."),
-        ("K", "The most qubits held in a dense statevector at once, as each simulator reports it. Sampling cost grows as 2^K."),
+        ("Views", "One row per circuit, one lane per simulator, on a shared log axis. Lines show the device: solid for"
+                  " CPUs, dashed for the Apple GPU, dotted for the RTX 5090. Relative puts each row's slowest simulator at"
+                  " 1× (for compilation, the slowest to compile). Compare draws each lane from its baseline (open mark:"
+                  " postselection off, or 1 thread) to the selected setting (filled mark) and gives the speedup."),
+        ("K", "The most qubits held in a dense statevector at once, as each simulator reports it. Sampling cost grows as 2^K. Italic: a run that failed, with the width the simulator reported in"
+              " its other runs of the circuit, in tsim-bench, or in its error."),
         ("Versions", f"{versions} · tsim-metal: bloqade-tsim {metal_version}" if versions else f"tsim-metal: bloqade-tsim {metal_version}"),
         ("Circuits", "From tsim-bench (github.com/rafaelha/tsim-bench); each name links to the circuit and its paper folder."),
     ]
     data = {
         "circuits": circuits,
         "cells": cells,
-        "engines": {k: {"id": k, "label": l, "slot": s, "shape": sh, "configs": c} for k, (l, s, sh, c) in ENGINES.items()},
+        "engines": {k: {"id": k, "label": l, "slot": s, "shape": sh, "configs": c,
+                        "line": "dashed" if "metal" in k else "dotted" if "cuda" in k else "solid"}
+                    for k, (l, s, sh, c) in ENGINES.items()},
         "modes": MODES,
+        "cores": cores,
         "specs": specs,
     }
     template = (HERE / "widget_template.html").read_text()
